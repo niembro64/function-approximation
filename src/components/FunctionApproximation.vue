@@ -33,23 +33,33 @@ const TAILWIND_GREEN_500: string = '#00c950';
 // Slider Ranges
 const MIN_POINTS: number = 1;
 const MAX_POINTS: number = 16;
-const DEFAULT_NUM_POINTS: number = 2;
+const DEFAULT_NUM_POINTS_DESKTOP: number = 3;
+const DEFAULT_NUM_POINTS_MOBILE: number = 2;
 
 const MIN_WEIGHTS: number = 1;
-const MAX_WEIGHTS: number = 24;
-const DEFAULT_NUM_WEIGHTS: number = 2;
+const MAX_WEIGHTS: number = 36;
+const DEFAULT_NUM_WEIGHTS_DESKTOP: number = 16;
+const DEFAULT_NUM_WEIGHTS_MOBILE: number = 2;
 
 const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
-const DEFAULT_NUM_CHILDREN: number = 7;
+const DEFAULT_NUM_CHILDREN_DESKTOP: number = 5;
+const DEFAULT_NUM_CHILDREN_MOBILE: number = 5;
 
 const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
-const DEFAULT_GENERATIONS_PER_SEC: number = 16;
+const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 16;
+const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 16;
 
 const MIN_MUTATION_VARIANCE: number = 0.01;
 const MAX_MUTATION_VARIANCE: number = 2;
-const DEFAULT_MUTATION_VARIANCE: number = 1;
+const DEFAULT_MUTATION_VARIANCE_DESKTOP: number = 1;
+const DEFAULT_MUTATION_VARIANCE_MOBILE: number = 1;
+
+const MIN_WEIGHT_PENALTY: number = 0;
+const MAX_WEIGHT_PENALTY: number = 1;
+const DEFAULT_WEIGHT_PENALTY_DESKTOP: number = 0;
+const DEFAULT_WEIGHT_PENALTY_MOBILE: number = 0;
 
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
@@ -120,15 +130,31 @@ const COLOR_GRID: string = '#333'; // Dark gray
 const COLOR_AXES: string = '#666'; // Gray
 const COLOR_LABELS: string = '#aaa'; // Light gray
 
+// Determine if mobile based on initial viewport width
+const isMobile = (): boolean => window.innerWidth < MOBILE_BREAKPOINT;
+
 // Reactive state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const allPoints = ref<Point[]>([]); // Full set of points (up to MAX_POINTS)
 const curves = ref<Curve[]>([]);
-const numPoints = ref<number>(DEFAULT_NUM_POINTS);
-const numWeights = ref<number>(DEFAULT_NUM_WEIGHTS);
-const numChildren = ref<number>(DEFAULT_NUM_CHILDREN);
-const generationsPerSec = ref<number>(DEFAULT_GENERATIONS_PER_SEC);
-const mutationVariance = ref<number>(DEFAULT_MUTATION_VARIANCE);
+const numPoints = ref<number>(
+  isMobile() ? DEFAULT_NUM_POINTS_MOBILE : DEFAULT_NUM_POINTS_DESKTOP
+);
+const numWeights = ref<number>(
+  isMobile() ? DEFAULT_NUM_WEIGHTS_MOBILE : DEFAULT_NUM_WEIGHTS_DESKTOP
+);
+const numChildren = ref<number>(
+  isMobile() ? DEFAULT_NUM_CHILDREN_MOBILE : DEFAULT_NUM_CHILDREN_DESKTOP
+);
+const generationsPerSec = ref<number>(
+  isMobile() ? DEFAULT_GENERATIONS_PER_SEC_MOBILE : DEFAULT_GENERATIONS_PER_SEC_DESKTOP
+);
+const mutationVariance = ref<number>(
+  isMobile() ? DEFAULT_MUTATION_VARIANCE_MOBILE : DEFAULT_MUTATION_VARIANCE_DESKTOP
+);
+const weightPenalty = ref<number>(
+  isMobile() ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP
+);
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
@@ -344,8 +370,8 @@ const evaluateCurve = (curve: Curve, x: number): number => {
   );
 };
 
-// Calculate fitness (Mean Squared Error - lower is better)
-const calculateFitness = (curve: Curve): number => {
+// Calculate base fitness (Mean Squared Error only - lower is better)
+const calculateBaseFitness = (curve: Curve): number => {
   let sumSquaredError: number = 0;
   points.value.forEach((point: Point): void => {
     const predicted: number = evaluateCurve(curve, point.x);
@@ -355,17 +381,34 @@ const calculateFitness = (curve: Curve): number => {
   return sumSquaredError / points.value.length;
 };
 
-// Update fitness for all curves
+// Calculate weight penalty for selection (sum of squared weights)
+const calculateWeightPenalty = (curve: Curve): number => {
+  if (weightPenalty.value === 0) {
+    return 0;
+  }
+  let penalty: number = 0;
+  curve.weights.forEach((weight: number): void => {
+    penalty += weight * weight;
+  });
+  return penalty * weightPenalty.value;
+};
+
+// Calculate fitness with weight penalty for selection within a generation
+const calculateFitnessWithPenalty = (curve: Curve): number => {
+  return curve.fitness + calculateWeightPenalty(curve);
+};
+
+// Update fitness for all curves (stores base MSE only)
 const updateFitness = (): void => {
   curves.value.forEach((curve: Curve): void => {
-    curve.fitness = calculateFitness(curve);
+    curve.fitness = calculateBaseFitness(curve);
   });
 };
 
-// Get sorted curves by fitness (best first)
+// Get sorted curves by fitness with weight penalty applied for selection (best first)
 const sortedCurves = computed((): Curve[] => {
   return [...curves.value].sort(
-    (a: Curve, b: Curve): number => a.fitness - b.fitness
+    (a: Curve, b: Curve): number => calculateFitnessWithPenalty(a) - calculateFitnessWithPenalty(b)
   );
 });
 
@@ -858,6 +901,14 @@ watch(numChildren, (): void => {
           :step="0.01"
           :decimals="2"
         />
+        <Slider
+          label="↑ Weight Penalty"
+          v-model="weightPenalty"
+          :min="MIN_WEIGHT_PENALTY"
+          :max="MAX_WEIGHT_PENALTY"
+          :step="0.01"
+          :decimals="2"
+        />
       </div>
 
       <!-- Buttons -->
@@ -866,13 +917,13 @@ watch(numChildren, (): void => {
           @click="generateCurves"
           class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
         >
-          Random Curves
+          New Curves
         </button>
         <button
           @click="generateRandomPoints"
           class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
         >
-          Random Points
+          New Points
         </button>
       </div>
 
