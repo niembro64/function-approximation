@@ -842,7 +842,7 @@ watch(numChildren, (): void => {
     class="flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
   >
     <div
-      class="w-full md:w-[600px] flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 shrink-0"
+      class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto order-2 md:order-1 md:shrink"
     >
       <!-- Formulas side by side -->
       <div
