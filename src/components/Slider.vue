@@ -28,8 +28,8 @@ const displayValue = (): string => {
 </script>
 
 <template>
-  <div class="flex items-center gap-3">
-    <label class="text-ui-text-normal text-sm w-32 font-mono">{{ label }}</label>
+  <div class="flex items-center gap-2 md:gap-3">
+    <label class="text-ui-text-normal text-xs md:text-sm w-28 md:w-40 font-mono">{{ label }}</label>
     <div class="flex-1 relative">
       <input
         type="range"
@@ -41,7 +41,7 @@ const displayValue = (): string => {
         class="custom-slider w-full"
       />
     </div>
-    <span class="text-ui-text text-sm font-mono w-10 text-right">{{ displayValue() }}</span>
+    <span class="text-ui-text text-xs md:text-sm font-mono w-8 md:w-10 text-right">{{ displayValue() }}</span>
   </div>
 </template>
 

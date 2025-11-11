@@ -93,8 +93,12 @@ const COORD_MAX: number = 1;
 const CANVAS_SIZE = ref<number>(500);
 const PADDING: number = 40;
 const MIN_CANVAS_SIZE: number = 350;
+const MIN_CANVAS_SIZE_MOBILE: number = 280;
 const VIEWPORT_HEIGHT_OFFSET: number = 60;
+const VIEWPORT_HEIGHT_OFFSET_MOBILE: number = 450; // More offset on mobile for stacked layout
 const VIEWPORT_WIDTH_OFFSET: number = 660; // Increased for wider left panel
+const VIEWPORT_WIDTH_OFFSET_MOBILE: number = 40; // Minimal offset on mobile
+const MOBILE_BREAKPOINT: number = 768; // px
 
 // Curve Drawing
 const CURVE_RESOLUTION: number = 200; // Number of points to draw curves
@@ -414,10 +418,16 @@ const upperBound = computed((): string => {
 const calculateCanvasSize = (): void => {
   const viewportHeight: number = window.innerHeight;
   const viewportWidth: number = window.innerWidth;
-  const availableHeight: number = viewportHeight - VIEWPORT_HEIGHT_OFFSET;
-  const availableWidth: number = viewportWidth - VIEWPORT_WIDTH_OFFSET;
+  const isMobile: boolean = viewportWidth < MOBILE_BREAKPOINT;
+
+  const heightOffset: number = isMobile ? VIEWPORT_HEIGHT_OFFSET_MOBILE : VIEWPORT_HEIGHT_OFFSET;
+  const widthOffset: number = isMobile ? VIEWPORT_WIDTH_OFFSET_MOBILE : VIEWPORT_WIDTH_OFFSET;
+  const minSize: number = isMobile ? MIN_CANVAS_SIZE_MOBILE : MIN_CANVAS_SIZE;
+
+  const availableHeight: number = viewportHeight - heightOffset;
+  const availableWidth: number = viewportWidth - widthOffset;
   const size: number = Math.min(availableHeight, availableWidth);
-  CANVAS_SIZE.value = Math.max(MIN_CANVAS_SIZE, Math.floor(size));
+  CANVAS_SIZE.value = Math.max(minSize, Math.floor(size));
 };
 
 // Convert coordinates from coordinate system range to canvas coordinates
@@ -517,6 +527,58 @@ const handleMouseUp = (): void => {
 };
 
 const handleMouseLeave = (): void => {
+  draggingPointIndex.value = null;
+  hoveredPointIndex.value = null;
+};
+
+// Touch event handlers for mobile point dragging
+const handleTouchStart = (event: TouchEvent): void => {
+  const canvas: HTMLCanvasElement | null = canvasRef.value;
+  if (canvas === null || event.touches.length === 0) return;
+
+  event.preventDefault(); // Prevent scrolling while touching canvas
+
+  const rect: DOMRect = canvas.getBoundingClientRect();
+  const touch: Touch = event.touches[0];
+  const cx: number = touch.clientX - rect.left;
+  const cy: number = touch.clientY - rect.top;
+
+  const pointIndex: number | null = getPointAtPosition(cx, cy);
+  if (pointIndex !== null) {
+    draggingPointIndex.value = pointIndex;
+  }
+};
+
+const handleTouchMove = (event: TouchEvent): void => {
+  const canvas: HTMLCanvasElement | null = canvasRef.value;
+  if (canvas === null || event.touches.length === 0) return;
+
+  if (draggingPointIndex.value !== null) {
+    event.preventDefault(); // Prevent scrolling while dragging
+
+    const rect: DOMRect = canvas.getBoundingClientRect();
+    const touch: Touch = event.touches[0];
+    const cx: number = touch.clientX - rect.left;
+    const cy: number = touch.clientY - rect.top;
+
+    const coords: CoordSystemCoords = toCoordSystemCoords(cx, cy);
+
+    // Clamp to bounds
+    const clampedX: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.x));
+    const clampedY: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.y));
+
+    // Update the point in allPoints array
+    allPoints.value[draggingPointIndex.value] = {
+      x: clampedX,
+      y: clampedY,
+    };
+
+    // Update fitness calculations
+    updateFitness();
+  }
+};
+
+const handleTouchEnd = (): void => {
   draggingPointIndex.value = null;
   hoveredPointIndex.value = null;
 };
@@ -708,28 +770,28 @@ watch(numChildren, (): void => {
 </script>
 
 <template>
-  <div class="flex gap-4 justify-center items-stretch flex-1 overflow-hidden">
+  <div class="flex flex-col md:flex-row gap-2 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-2 md:p-0">
     <div
-      class="w-[600px] flex flex-col text-left p-3 bg-ui-bg rounded-lg border-2 border-ui-border overflow-hidden"
+      class="w-full md:w-[600px] flex flex-col text-left p-2 md:p-3 bg-ui-bg rounded-lg border-2 border-ui-border overflow-hidden order-2 md:order-1"
     >
       <!-- Buttons -->
-      <div class="mb-3 flex gap-2">
+      <div class="mb-2 md:mb-3 flex gap-2">
         <button
           @click="generateCurves"
-          class="flex-1 p-2 bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
         >
           Random Curves
         </button>
         <button
           @click="generateRandomPoints"
-          class="flex-1 p-2 bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
         >
           Random Points
         </button>
       </div>
 
       <!-- Sliders -->
-      <div class="mb-3 flex flex-col gap-2">
+      <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
         <Slider
           label="Points"
           v-model="numPoints"
@@ -764,12 +826,12 @@ watch(numChildren, (): void => {
         />
       </div>
 
-      <div class="m-0 mb-2 text-white text-2xl flex items-center justify-center gap-3 font-mono">
-        <span>f(x) =</span>
+      <div class="m-0 mb-3 md:mb-2 text-white text-lg md:text-2xl flex items-center justify-center gap-2 md:gap-3 font-mono">
+        <span>fᵢ(x) =</span>
         <div class="inline-flex flex-col items-center leading-none">
-          <span class="text-sm">{{ upperBound }}</span>
-          <span class="text-5xl leading-none">Σ</span>
-          <span class="text-sm">i=0</span>
+          <span class="text-xs md:text-sm">{{ upperBound }}</span>
+          <span class="text-4xl md:text-5xl leading-none">Σ</span>
+          <span class="text-xs md:text-sm">i=0</span>
         </div>
         <span>wᵢxⁱ</span>
       </div>
@@ -831,12 +893,16 @@ watch(numChildren, (): void => {
       ref="canvasRef"
       :width="CANVAS_SIZE"
       :height="CANVAS_SIZE"
-      class="border-2 border-ui-border rounded-lg bg-canvas-bg shrink-0"
+      class="border-2 border-ui-border rounded-lg bg-canvas-bg shrink-0 touch-none order-1 md:order-2"
       :style="{ cursor: hoveredPointIndex !== null || draggingPointIndex !== null ? 'pointer' : 'default' }"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
       @mouseleave="handleMouseLeave"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+      @touchcancel="handleTouchEnd"
     />
   </div>
 </template>
