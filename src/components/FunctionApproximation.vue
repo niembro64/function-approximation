@@ -32,7 +32,7 @@ const DEFAULT_NUM_CHILDREN: number = 16;
 
 const MIN_GENERATIONS_PER_SEC: number = 1; // Slow (1 gen/sec)
 const MAX_GENERATIONS_PER_SEC: number = 256; // Very fast (1000 gen/sec)
-const DEFAULT_GENERATIONS_PER_SEC: number = 64; // Default (10 gen/sec)
+const DEFAULT_GENERATIONS_PER_SEC: number = 8; // Default (10 gen/sec)
 
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
