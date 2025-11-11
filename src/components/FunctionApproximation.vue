@@ -147,10 +147,14 @@ const numChildren = ref<number>(
   isMobile() ? DEFAULT_NUM_CHILDREN_MOBILE : DEFAULT_NUM_CHILDREN_DESKTOP
 );
 const generationsPerSec = ref<number>(
-  isMobile() ? DEFAULT_GENERATIONS_PER_SEC_MOBILE : DEFAULT_GENERATIONS_PER_SEC_DESKTOP
+  isMobile()
+    ? DEFAULT_GENERATIONS_PER_SEC_MOBILE
+    : DEFAULT_GENERATIONS_PER_SEC_DESKTOP
 );
 const mutationVariance = ref<number>(
-  isMobile() ? DEFAULT_MUTATION_VARIANCE_MOBILE : DEFAULT_MUTATION_VARIANCE_DESKTOP
+  isMobile()
+    ? DEFAULT_MUTATION_VARIANCE_MOBILE
+    : DEFAULT_MUTATION_VARIANCE_DESKTOP
 );
 const weightPenalty = ref<number>(
   isMobile() ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP
@@ -215,6 +219,7 @@ const randomUniform = (mean: number, range: number): number => {
 
 // Apply mutation based on distribution type
 const applyMutation = (value: number, variance: number): number => {
+  // @ts-ignore
   if (MUTATION_DISTRIBUTION_TYPE === 'uniform') {
     return randomUniform(value, variance);
   } else {
@@ -408,7 +413,8 @@ const updateFitness = (): void => {
 // Get sorted curves by fitness with weight penalty applied for selection (best first)
 const sortedCurves = computed((): Curve[] => {
   return [...curves.value].sort(
-    (a: Curve, b: Curve): number => calculateFitnessWithPenalty(a) - calculateFitnessWithPenalty(b)
+    (a: Curve, b: Curve): number =>
+      calculateFitnessWithPenalty(a) - calculateFitnessWithPenalty(b)
   );
 });
 
@@ -839,7 +845,9 @@ watch(numChildren, (): void => {
       class="w-full md:w-[600px] flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 shrink-0"
     >
       <!-- Formulas side by side -->
-      <div class="m-0 mb-3 md:mb-4 text-white flex items-center justify-center gap-4 md:gap-6 font-mono text-sm md:text-base">
+      <div
+        class="m-0 mb-3 md:mb-4 text-white flex items-center justify-center gap-4 md:gap-6 font-mono text-sm md:text-base"
+      >
         <!-- Function Formula -->
         <div class="flex items-center gap-1.5">
           <span>fᵢ(x) =</span>
