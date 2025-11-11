@@ -4,9 +4,11 @@ interface Props {
   modelValue: number;
   min: number;
   max: number;
+  step?: number;
+  decimals?: number;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: number];
@@ -15,6 +17,13 @@ const emit = defineEmits<{
 const handleInput = (event: Event): void => {
   const target = event.target as HTMLInputElement;
   emit('update:modelValue', Number(target.value));
+};
+
+const displayValue = (): string => {
+  if (props.decimals !== undefined) {
+    return props.modelValue.toFixed(props.decimals);
+  }
+  return props.modelValue.toString();
 };
 </script>
 
@@ -28,10 +37,11 @@ const handleInput = (event: Event): void => {
         @input="handleInput"
         :min="min"
         :max="max"
+        :step="step || 1"
         class="custom-slider w-full"
       />
     </div>
-    <span class="text-ui-text text-sm font-mono w-10 text-right">{{ modelValue }}</span>
+    <span class="text-ui-text text-sm font-mono w-10 text-right">{{ displayValue() }}</span>
   </div>
 </template>
 

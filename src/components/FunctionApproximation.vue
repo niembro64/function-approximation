@@ -47,6 +47,10 @@ const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
 const DEFAULT_GENERATIONS_PER_SEC: number = 60;
 
+const MIN_MUTATION_VARIANCE: number = 0.01;
+const MAX_MUTATION_VARIANCE: number = 2;
+const DEFAULT_MUTATION_VARIANCE: number = 0.5;
+
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
@@ -66,7 +70,7 @@ const OTHER_CURVE_OPACITY: number = 0.5;
 type MutationDistribution = 'normal' | 'uniform';
 const MUTATION_DISTRIBUTION_TYPE: MutationDistribution = 'normal'; // Distribution type: 'normal' (Gaussian) or 'uniform'
 const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
-const MUTATION_MAX_VARIANCE: number = 0.2; // Maximum variance (for last index)
+const MUTATION_MAX_VARIANCE: number = 0.01; // Maximum variance (for last index)
 const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
 const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0]; // Variance multiplier per weight (if empty, uses 1.0 for all)
 
@@ -119,6 +123,7 @@ const numPoints = ref<number>(DEFAULT_NUM_POINTS);
 const numWeights = ref<number>(DEFAULT_NUM_WEIGHTS);
 const numChildren = ref<number>(DEFAULT_NUM_CHILDREN);
 const generationsPerSec = ref<number>(DEFAULT_GENERATIONS_PER_SEC);
+const mutationVariance = ref<number>(DEFAULT_MUTATION_VARIANCE);
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
@@ -241,7 +246,7 @@ const generateCurvesFromBest = (): void => {
       );
       const baseVariance: number =
         MUTATION_MIN_VARIANCE +
-        varianceFactor * (MUTATION_MAX_VARIANCE - MUTATION_MIN_VARIANCE);
+        varianceFactor * (mutationVariance.value - MUTATION_MIN_VARIANCE);
 
       // Apply adaptive scaling to base variance
       const adaptiveVariance: number = baseVariance * adaptiveScale;
@@ -748,6 +753,14 @@ watch(numChildren, (): void => {
           v-model="generationsPerSec"
           :min="MIN_GENERATIONS_PER_SEC"
           :max="MAX_GENERATIONS_PER_SEC"
+        />
+        <Slider
+          label="Mut Var"
+          v-model="mutationVariance"
+          :min="MIN_MUTATION_VARIANCE"
+          :max="MAX_MUTATION_VARIANCE"
+          :step="0.01"
+          :decimals="2"
         />
       </div>
 
