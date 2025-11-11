@@ -13,7 +13,7 @@ export default {
           hover: '#1a6eee',
         },
         'ui-bg': {
-          DEFAULT: '#2a2a2a',
+          DEFAULT: '#1a1a1a',
           dark: '#1a1a1a',
           hover: '#252525',
           highlight: '#1e293b',

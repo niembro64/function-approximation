@@ -33,23 +33,23 @@ const TAILWIND_GREEN_500: string = '#00c950';
 // Slider Ranges
 const MIN_POINTS: number = 1;
 const MAX_POINTS: number = 16;
-const DEFAULT_NUM_POINTS: number = 6;
+const DEFAULT_NUM_POINTS: number = 2;
 
 const MIN_WEIGHTS: number = 1;
 const MAX_WEIGHTS: number = 24;
-const DEFAULT_NUM_WEIGHTS: number = 16;
+const DEFAULT_NUM_WEIGHTS: number = 2;
 
 const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
-const DEFAULT_NUM_CHILDREN: number = 16;
+const DEFAULT_NUM_CHILDREN: number = 7;
 
 const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
-const DEFAULT_GENERATIONS_PER_SEC: number = 60;
+const DEFAULT_GENERATIONS_PER_SEC: number = 16;
 
 const MIN_MUTATION_VARIANCE: number = 0.01;
 const MAX_MUTATION_VARIANCE: number = 2;
-const DEFAULT_MUTATION_VARIANCE: number = 0.5;
+const DEFAULT_MUTATION_VARIANCE: number = 1;
 
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
@@ -68,9 +68,8 @@ const OTHER_CURVE_OPACITY: number = 0.5;
 
 // Genetic Algorithm / Mutation
 type MutationDistribution = 'normal' | 'uniform';
-const MUTATION_DISTRIBUTION_TYPE: MutationDistribution = 'normal'; // Distribution type: 'normal' (Gaussian) or 'uniform'
+const MUTATION_DISTRIBUTION_TYPE = 'normal' satisfies MutationDistribution; // Distribution type: 'normal' (Gaussian) or 'uniform'
 const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
-const MUTATION_MAX_VARIANCE: number = 0.01; // Maximum variance (for last index)
 const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
 const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0]; // Variance multiplier per weight (if empty, uses 1.0 for all)
 
@@ -92,6 +91,7 @@ const CURVE_HORIZONTAL_OVERDRAW: number = 1.0; // Extend curve drawing beyond vi
 
 // Canvas Dimensions
 const CANVAS_SIZE = ref<number>(500);
+const CANVAS_SCALE: number = 2; // Render at 2x resolution for crisp display
 const PADDING: number = 40;
 const MIN_CANVAS_SIZE: number = 350;
 const MIN_CANVAS_SIZE_MOBILE: number = 280;
@@ -205,7 +205,9 @@ const getAdaptiveVarianceScale = (fitness: number): number => {
   }
 
   // Use square root scaling: scale = sqrt(fitness / target)
-  const rawScale: number = Math.sqrt(fitness / ADAPTIVE_VARIANCE_FITNESS_TARGET);
+  const rawScale: number = Math.sqrt(
+    fitness / ADAPTIVE_VARIANCE_FITNESS_TARGET
+  );
 
   // Clamp to min/max range
   return Math.max(
@@ -225,7 +227,10 @@ const getWeightProportionalScale = (weight: number): number => {
   const absWeight: number = Math.abs(weight);
   // Scale = min + (absWeight * factor)
   // This gives proportional scaling with a minimum baseline
-  return WEIGHT_PROPORTIONAL_VARIANCE_MIN + (absWeight * WEIGHT_PROPORTIONAL_VARIANCE_FACTOR);
+  return (
+    WEIGHT_PROPORTIONAL_VARIANCE_MIN +
+    absWeight * WEIGHT_PROPORTIONAL_VARIANCE_FACTOR
+  );
 };
 
 // Generate curves by mutating the best curve
@@ -264,10 +269,12 @@ const generateCurvesFromBest = (): void => {
             MUTATION_WEIGHT_VARIANCE_SCALES[weightIndex] ?? 1.0;
 
           // Get weight-proportional scale based on magnitude
-          const weightProportionalScale: number = getWeightProportionalScale(weight);
+          const weightProportionalScale: number =
+            getWeightProportionalScale(weight);
 
           // Combine all scaling factors
-          const weightVariance: number = adaptiveVariance * varianceScale * weightProportionalScale;
+          const weightVariance: number =
+            adaptiveVariance * varianceScale * weightProportionalScale;
 
           return applyMutation(weight, weightVariance);
         }
@@ -421,8 +428,12 @@ const calculateCanvasSize = (): void => {
   const viewportWidth: number = window.innerWidth;
   const isMobile: boolean = viewportWidth < MOBILE_BREAKPOINT;
 
-  const heightOffset: number = isMobile ? VIEWPORT_HEIGHT_OFFSET_MOBILE : VIEWPORT_HEIGHT_OFFSET;
-  const widthOffset: number = isMobile ? VIEWPORT_WIDTH_OFFSET_MOBILE : VIEWPORT_WIDTH_OFFSET;
+  const heightOffset: number = isMobile
+    ? VIEWPORT_HEIGHT_OFFSET_MOBILE
+    : VIEWPORT_HEIGHT_OFFSET;
+  const widthOffset: number = isMobile
+    ? VIEWPORT_WIDTH_OFFSET_MOBILE
+    : VIEWPORT_WIDTH_OFFSET;
   const minSize: number = isMobile ? MIN_CANVAS_SIZE_MOBILE : MIN_CANVAS_SIZE;
 
   const availableHeight: number = viewportHeight - heightOffset;
@@ -540,7 +551,10 @@ const handleTouchStart = (event: TouchEvent): void => {
   event.preventDefault(); // Prevent scrolling while touching canvas
 
   const rect: DOMRect = canvas.getBoundingClientRect();
-  const touch: Touch = event.touches[0];
+  const touch: Touch | null = event.touches[0] || null;
+
+  if (touch === null) return;
+
   const cx: number = touch.clientX - rect.left;
   const cy: number = touch.clientY - rect.top;
 
@@ -558,7 +572,10 @@ const handleTouchMove = (event: TouchEvent): void => {
     event.preventDefault(); // Prevent scrolling while dragging
 
     const rect: DOMRect = canvas.getBoundingClientRect();
-    const touch: Touch = event.touches[0];
+    const touch: Touch | null = event.touches[0] || null;
+
+    if (touch === null) return;
+
     const cx: number = touch.clientX - rect.left;
     const cy: number = touch.clientY - rect.top;
 
@@ -591,6 +608,9 @@ const draw = (): void => {
 
   const ctx: CanvasRenderingContext2D | null = canvas.getContext('2d');
   if (ctx === null) return;
+
+  // Scale context for high-resolution rendering
+  ctx.setTransform(CANVAS_SCALE, 0, 0, CANVAS_SCALE, 0, 0);
 
   // Clear canvas
   ctx.fillStyle = COLOR_BACKGROUND;
@@ -672,15 +692,9 @@ const draw = (): void => {
     ctx.lineWidth = ERROR_BAR_LINE_WIDTH;
 
     points.value.forEach((point: Point): void => {
-      const pointCoords: CanvasCoords = toCanvasCoords(
-        point.x,
-        point.y
-      );
+      const pointCoords: CanvasCoords = toCanvasCoords(point.x, point.y);
       const predictedY: number = evaluateCurve(bestCurve, point.x);
-      const curveCoords: CanvasCoords = toCanvasCoords(
-        point.x,
-        predictedY
-      );
+      const curveCoords: CanvasCoords = toCanvasCoords(point.x, predictedY);
 
       ctx.beginPath();
       ctx.moveTo(pointCoords.cx, pointCoords.cy);
@@ -775,10 +789,77 @@ watch(numChildren, (): void => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row gap-2 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-2 md:p-0">
+  <div
+    class="flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
+  >
     <div
-      class="w-full md:w-[600px] flex flex-col text-left p-2 md:p-3 bg-ui-bg rounded-lg border-2 border-ui-border overflow-hidden order-2 md:order-1"
+      class="w-full md:w-[600px] flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 shrink-0"
     >
+      <!-- Formulas side by side -->
+      <div class="m-0 mb-3 md:mb-4 text-white flex items-center justify-center gap-4 md:gap-6 font-mono text-sm md:text-base">
+        <!-- Function Formula -->
+        <div class="flex items-center gap-1.5">
+          <span>fᵢ(x) =</span>
+          <div class="inline-flex flex-col items-center leading-none">
+            <span class="text-[10px]">{{ upperBound }}</span>
+            <span class="text-2xl md:text-3xl leading-none">Σ</span>
+            <span class="text-[10px]">i=0</span>
+          </div>
+          <span>wᵢxⁱ</span>
+        </div>
+
+        <!-- Fitness Formula -->
+        <div class="flex items-center gap-1.5">
+          <span>Fitness =</span>
+          <div class="inline-flex flex-col items-center leading-none">
+            <span class="text-[9px]">1</span>
+            <span class="border-t border-white px-0.5 text-[9px]">n</span>
+          </div>
+          <div class="inline-flex flex-col items-center leading-none">
+            <span class="text-[10px]">n</span>
+            <span class="text-2xl md:text-3xl leading-none">Σ</span>
+            <span class="text-[10px]">j=1</span>
+          </div>
+          <span>(yⱼ - fᵢ(xⱼ))²</span>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
+        <Slider
+          label="# Points"
+          v-model="numPoints"
+          :min="MIN_POINTS"
+          :max="MAX_POINTS"
+        />
+        <Slider
+          label="# Weights"
+          v-model="numWeights"
+          :min="MIN_WEIGHTS"
+          :max="MAX_WEIGHTS"
+        />
+        <Slider
+          label="# Children"
+          v-model="numChildren"
+          :min="MIN_CHILDREN"
+          :max="MAX_CHILDREN"
+        />
+        <Slider
+          label="Speed"
+          v-model="generationsPerSec"
+          :min="MIN_GENERATIONS_PER_SEC"
+          :max="MAX_GENERATIONS_PER_SEC"
+        />
+        <Slider
+          label="Mutation Variance"
+          v-model="mutationVariance"
+          :min="MIN_MUTATION_VARIANCE"
+          :max="MAX_MUTATION_VARIANCE"
+          :step="0.01"
+          :decimals="2"
+        />
+      </div>
+
       <!-- Buttons -->
       <div class="mb-2 md:mb-3 flex gap-2">
         <button
@@ -795,54 +876,9 @@ watch(numChildren, (): void => {
         </button>
       </div>
 
-      <!-- Sliders -->
-      <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
-        <Slider
-          label="Points"
-          v-model="numPoints"
-          :min="MIN_POINTS"
-          :max="MAX_POINTS"
-        />
-        <Slider
-          label="Weights (i)"
-          v-model="numWeights"
-          :min="MIN_WEIGHTS"
-          :max="MAX_WEIGHTS"
-        />
-        <Slider
-          label="Children"
-          v-model="numChildren"
-          :min="MIN_CHILDREN"
-          :max="MAX_CHILDREN"
-        />
-        <Slider
-          label="Speed"
-          v-model="generationsPerSec"
-          :min="MIN_GENERATIONS_PER_SEC"
-          :max="MAX_GENERATIONS_PER_SEC"
-        />
-        <Slider
-          label="Mut Var"
-          v-model="mutationVariance"
-          :min="MIN_MUTATION_VARIANCE"
-          :max="MAX_MUTATION_VARIANCE"
-          :step="0.01"
-          :decimals="2"
-        />
-      </div>
-
-      <div class="m-0 mb-3 md:mb-2 text-white text-lg md:text-2xl flex items-center justify-center gap-2 md:gap-3 font-mono">
-        <span>fᵢ(x) =</span>
-        <div class="inline-flex flex-col items-center leading-none">
-          <span class="text-xs md:text-sm">{{ upperBound }}</span>
-          <span class="text-4xl md:text-5xl leading-none">Σ</span>
-          <span class="text-xs md:text-sm">i=0</span>
-        </div>
-        <span>wᵢxⁱ</span>
-      </div>
-
-
-      <div class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0">
+      <div
+        class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
+      >
         <div
           class="w-12 text-center text-[10px] flex items-center justify-center"
         >
@@ -896,10 +932,15 @@ watch(numChildren, (): void => {
 
     <canvas
       ref="canvasRef"
-      :width="CANVAS_SIZE"
-      :height="CANVAS_SIZE"
-      class="border-2 border-ui-border rounded-lg bg-canvas-bg shrink-0 touch-none order-1 md:order-2"
-      :style="{ cursor: hoveredPointIndex !== null || draggingPointIndex !== null ? 'pointer' : 'default' }"
+      :width="CANVAS_SIZE * CANVAS_SCALE"
+      :height="CANVAS_SIZE * CANVAS_SCALE"
+      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full flex-1 max-w-full object-contain md:max-w-[66vw] md:h-full md:flex-initial"
+      :style="{
+        cursor:
+          hoveredPointIndex !== null || draggingPointIndex !== null
+            ? 'pointer'
+            : 'default',
+      }"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
