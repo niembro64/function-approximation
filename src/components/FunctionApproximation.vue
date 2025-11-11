@@ -103,6 +103,10 @@ let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
 
+// Drag state
+const draggingPointIndex = ref<number | null>(null);
+const hoveredPointIndex = ref<number | null>(null);
+
 // Computed: Get the first N points from allPoints based on slider
 const points = computed((): Point[] => {
   return allPoints.value.slice(0, numPoints.value);
@@ -393,9 +397,93 @@ const toCanvasCoords = (x: number, y: number): { cx: number; cy: number } => {
   };
 };
 
+// Convert canvas coordinates back to coordinate system values
+const toCoordSystemCoords = (cx: number, cy: number): { x: number; y: number } => {
+  const size: number = CANVAS_SIZE.value - 2 * PADDING;
+  const range: number = COORD_MAX - COORD_MIN;
+  return {
+    x: COORD_MIN + ((cx - PADDING) * range) / size,
+    y: COORD_MIN + ((CANVAS_SIZE.value - PADDING - cy) * range) / size,
+  };
+};
+
 // Get color for curve based on rank
 const getCurveColor = (index: number): string => {
   return index === 0 ? BEST_CURVE_COLOR : OTHER_CURVE_COLOR;
+};
+
+// Find point at given canvas position (returns index or null)
+const getPointAtPosition = (cx: number, cy: number): number | null => {
+  const hitRadius: number = POINT_RADIUS + 5; // Slightly larger hit area
+
+  for (let i = 0; i < points.value.length; i++) {
+    const point: Point = points.value[i];
+    const coords: { cx: number; cy: number } = toCanvasCoords(point.x, point.y);
+    const dx: number = cx - coords.cx;
+    const dy: number = cy - coords.cy;
+    const distance: number = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= hitRadius) {
+      return i;
+    }
+  }
+
+  return null;
+};
+
+// Mouse event handlers for point dragging
+const handleMouseDown = (event: MouseEvent): void => {
+  const canvas: HTMLCanvasElement | null = canvasRef.value;
+  if (canvas === null) return;
+
+  const rect: DOMRect = canvas.getBoundingClientRect();
+  const cx: number = event.clientX - rect.left;
+  const cy: number = event.clientY - rect.top;
+
+  const pointIndex: number | null = getPointAtPosition(cx, cy);
+  if (pointIndex !== null) {
+    draggingPointIndex.value = pointIndex;
+  }
+};
+
+const handleMouseMove = (event: MouseEvent): void => {
+  const canvas: HTMLCanvasElement | null = canvasRef.value;
+  if (canvas === null) return;
+
+  const rect: DOMRect = canvas.getBoundingClientRect();
+  const cx: number = event.clientX - rect.left;
+  const cy: number = event.clientY - rect.top;
+
+  // If dragging, update point position
+  if (draggingPointIndex.value !== null) {
+    const coords: { x: number; y: number } = toCoordSystemCoords(cx, cy);
+
+    // Clamp to bounds
+    const clampedX: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.x));
+    const clampedY: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.y));
+
+    // Update the point in allPoints array
+    allPoints.value[draggingPointIndex.value] = {
+      x: clampedX,
+      y: clampedY,
+    };
+
+    // Update fitness calculations
+    updateFitness();
+  } else {
+    // Not dragging, update hover state
+    const pointIndex: number | null = getPointAtPosition(cx, cy);
+    hoveredPointIndex.value = pointIndex;
+  }
+};
+
+const handleMouseUp = (): void => {
+  draggingPointIndex.value = null;
+};
+
+const handleMouseLeave = (): void => {
+  draggingPointIndex.value = null;
+  hoveredPointIndex.value = null;
 };
 
 // Draw everything on canvas
@@ -695,6 +783,11 @@ watch(numChildren, (): void => {
       :width="CANVAS_SIZE"
       :height="CANVAS_SIZE"
       class="border-2 border-ui-border rounded-lg bg-canvas-bg shrink-0"
+      :style="{ cursor: hoveredPointIndex !== null || draggingPointIndex !== null ? 'pointer' : 'default' }"
+      @mousedown="handleMouseDown"
+      @mousemove="handleMouseMove"
+      @mouseup="handleMouseUp"
+      @mouseleave="handleMouseLeave"
     />
   </div>
 </template>
