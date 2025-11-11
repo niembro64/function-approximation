@@ -20,7 +20,7 @@ const handleInput = (event: Event): void => {
 
 <template>
   <div class="flex items-center gap-3">
-    <label class="text-ui-text-normal text-sm w-20 font-mono">{{ label }}</label>
+    <label class="text-ui-text-normal text-sm w-32 font-mono">{{ label }}</label>
     <div class="flex-1 relative">
       <input
         type="range"
@@ -31,7 +31,7 @@ const handleInput = (event: Event): void => {
         class="custom-slider w-full"
       />
     </div>
-    <span class="text-ui-text text-sm font-mono w-12 text-right">{{ modelValue }}</span>
+    <span class="text-ui-text text-sm font-mono w-10 text-right">{{ modelValue }}</span>
   </div>
 </template>
 

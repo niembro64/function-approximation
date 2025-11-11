@@ -34,9 +34,9 @@ const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
 const DEFAULT_NUM_CHILDREN: number = 16;
 
-const MIN_GENERATIONS_PER_SEC: number = 1; // Slow (1 gen/sec)
-const MAX_GENERATIONS_PER_SEC: number = 256; // Very fast (1000 gen/sec)
-const DEFAULT_GENERATIONS_PER_SEC: number = 8; // Default (10 gen/sec)
+const MIN_GENERATIONS_PER_SEC: number = 1;
+const MAX_GENERATIONS_PER_SEC: number = 256;
+const DEFAULT_GENERATIONS_PER_SEC: number = 60;
 
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
@@ -48,7 +48,7 @@ const DOT_BORDER_WIDTH: number = 3;
 
 // Curve Drawing Styles
 const BEST_CURVE_LINE_WIDTH: number = 5;
-const BEST_CURVE_COLOR: string = TAILWIND_BLUE_500;
+const BEST_CURVE_COLOR: string = TAILWIND_GREEN_500;
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
 const OTHER_CURVE_OPACITY: number = 0.5;
@@ -60,6 +60,12 @@ const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
 const MUTATION_MAX_VARIANCE: number = 0.2; // Maximum variance (for last index)
 const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
 const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0]; // Variance multiplier per weight (if empty, uses 1.0 for all)
+
+// Adaptive Variance (based on fitness)
+const ADAPTIVE_VARIANCE_ENABLED: boolean = true;
+const ADAPTIVE_VARIANCE_MIN_SCALE: number = 0.01; // Minimum variance scale (when fitness is very low/good)
+const ADAPTIVE_VARIANCE_MAX_SCALE: number = 1.0; // Maximum variance scale (when fitness is high/bad)
+const ADAPTIVE_VARIANCE_FITNESS_TARGET: number = 0.1; // Fitness value that gives ~50% scale
 
 // Coordinate System
 const COORD_MIN: number = -1;
@@ -166,8 +172,26 @@ const applyMutation = (value: number, variance: number): number => {
   }
 };
 
+// Calculate adaptive variance scale based on fitness
+// Low fitness (good) -> low scale (fine-tuning)
+// High fitness (bad) -> high scale (exploration)
+const getAdaptiveVarianceScale = (fitness: number): number => {
+  if (!ADAPTIVE_VARIANCE_ENABLED) {
+    return 1.0;
+  }
+
+  // Use square root scaling: scale = sqrt(fitness / target)
+  const rawScale: number = Math.sqrt(fitness / ADAPTIVE_VARIANCE_FITNESS_TARGET);
+
+  // Clamp to min/max range
+  return Math.max(
+    ADAPTIVE_VARIANCE_MIN_SCALE,
+    Math.min(ADAPTIVE_VARIANCE_MAX_SCALE, rawScale)
+  );
+};
+
 // Generate curves by mutating the best curve
-// Index 0 = exact copy, index 9 = maximum variance
+// Index 0 = exact copy, last index = maximum variance
 const generateCurvesFromBest = (): void => {
   const bestCurve: Curve | null = getBestCurve();
   if (bestCurve === null) {
@@ -175,6 +199,9 @@ const generateCurvesFromBest = (): void => {
     generateCurves();
     return;
   }
+
+  // Calculate adaptive variance scale based on best fitness
+  const adaptiveScale: number = getAdaptiveVarianceScale(bestCurve.fitness);
 
   curves.value = Array.from(
     { length: numChildren.value },
@@ -188,13 +215,16 @@ const generateCurvesFromBest = (): void => {
         MUTATION_MIN_VARIANCE +
         varianceFactor * (MUTATION_MAX_VARIANCE - MUTATION_MIN_VARIANCE);
 
+      // Apply adaptive scaling to base variance
+      const adaptiveVariance: number = baseVariance * adaptiveScale;
+
       // Apply mutations to each weight
       const mutatedWeights: number[] = bestCurve.weights.map(
         (weight: number, weightIndex: number): number => {
           // Get variance scale for this weight (default to 1.0 if not specified)
           const varianceScale: number =
             MUTATION_WEIGHT_VARIANCE_SCALES[weightIndex] ?? 1.0;
-          const weightVariance: number = baseVariance * varianceScale;
+          const weightVariance: number = adaptiveVariance * varianceScale;
           return applyMutation(weight, weightVariance);
         }
       );
@@ -335,46 +365,10 @@ const getWeightColor = (weight: number): string => {
   }
 };
 
-// Generate polynomial formula display (e.g., "y = w₀ + w₁x + w₂x²")
-const polynomialFormula = computed((): string => {
-  const subscripts: string[] = [
-    '₀',
-    '₁',
-    '₂',
-    '₃',
-    '₄',
-    '₅',
-    '₆',
-    '₇',
-    '₈',
-    '₉',
-  ];
-  const superscripts: string[] = [
-    '',
-    '',
-    '²',
-    '³',
-    '⁴',
-    '⁵',
-    '⁶',
-    '⁷',
-    '⁸',
-    '⁹',
-  ];
-
-  const terms: string[] = Array.from(
-    { length: numWeights.value },
-    (_: unknown, i: number): string => {
-      const subscript: string = subscripts[i] ?? i.toString();
-      const superscript: string = superscripts[i] ?? `^${i}`;
-
-      if (i === 0) return `w${subscript}`;
-      if (i === 1) return `w${subscript}x`;
-      return `w${subscript}x${superscript}`;
-    }
-  );
-
-  return `f(x) = ${terms.join(' + ')}`;
+// Generate upper bound for summation notation
+const upperBound = computed((): string => {
+  const n: number = numWeights.value - 1;
+  return n.toString();
 });
 
 // Calculate optimal canvas size based on viewport
@@ -703,7 +697,7 @@ watch(numChildren, (): void => {
           :max="MAX_POINTS"
         />
         <Slider
-          label="Weights"
+          label="Weights (i)"
           v-model="numWeights"
           :min="MIN_WEIGHTS"
           :max="MAX_WEIGHTS"
@@ -722,9 +716,16 @@ watch(numChildren, (): void => {
         />
       </div>
 
-      <h3 class="m-0 mb-2 text-ui-text text-base font-normal font-mono">
-        {{ polynomialFormula }}
-      </h3>
+      <div class="m-0 mb-2 text-white text-2xl flex items-center justify-center gap-3 font-mono">
+        <span>f(x) =</span>
+        <div class="inline-flex flex-col items-center leading-none">
+          <span class="text-sm">{{ upperBound }}</span>
+          <span class="text-5xl leading-none">Σ</span>
+          <span class="text-sm">i=0</span>
+        </div>
+        <span>wᵢxⁱ</span>
+      </div>
+
 
       <div class="flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0">
         <div
