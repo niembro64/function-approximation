@@ -56,8 +56,8 @@ const handleInput = (event: Event): void => {
   appearance: none;
   width: 22px;
   height: 22px;
-  background: #3b82f6;
-  border: 3px solid #ffffff;
+  background: #00c950; /* TAILWIND_GREEN_500 / DOT_COLOR */
+  border: 3px solid #ffffff; /* DOT_BORDER_COLOR with DOT_BORDER_WIDTH */
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
@@ -65,7 +65,7 @@ const handleInput = (event: Event): void => {
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
-  background: #2563eb;
+  background: #00b347; /* Darker green for hover */
   transform: scale(1.1);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
@@ -73,8 +73,8 @@ const handleInput = (event: Event): void => {
 .custom-slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
-  background: #3b82f6;
-  border: 3px solid #ffffff;
+  background: #00c950; /* TAILWIND_GREEN_500 / DOT_COLOR */
+  border: 3px solid #ffffff; /* DOT_BORDER_COLOR with DOT_BORDER_WIDTH */
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
@@ -82,7 +82,7 @@ const handleInput = (event: Event): void => {
 }
 
 .custom-slider::-moz-range-thumb:hover {
-  background: #2563eb;
+  background: #00b347; /* Darker green for hover */
   transform: scale(1.1);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }

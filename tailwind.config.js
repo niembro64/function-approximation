@@ -17,10 +17,10 @@ export default {
       },
       colors: {
         // Canvas colors
-        'canvas-best': '#ffffff',
+        'canvas-best': '#2b7fff',
         'canvas-other': '#666666',
-        'canvas-error': '#ff4444',
-        'canvas-points': '#ff6b6b',
+        'canvas-error': '#fb2c36',
+        'canvas-points': '#fb2c36',
         'canvas-point-border': '#ffffff',
         'canvas-bg': '#1a1a1a',
         'canvas-grid': '#333333',
@@ -29,10 +29,10 @@ export default {
 
         // UI colors
         'primary': {
-          DEFAULT: '#3b82f6',
-          hover: '#2563eb',
-          dark: '#1d4ed8',
-          'dark-hover': '#1e40af',
+          DEFAULT: '#2b7fff',
+          hover: '#1a6eee',
+          dark: '#1a6eee',
+          'dark-hover': '#0959dd',
         },
         'secondary': {
           DEFAULT: '#555555',

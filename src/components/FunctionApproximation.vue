@@ -17,6 +17,10 @@ interface Curve {
 // Configuration
 // ============================================================
 
+const TAILWIND_BLUE_500: string = '#2b7fff';
+const TAILWIND_RED_500: string = '#fb2c36';
+const TAILWIND_GREEN_500: string = '#00c950';
+
 // Slider Ranges
 const MIN_POINTS: number = 1;
 const MAX_POINTS: number = 16;
@@ -37,9 +41,14 @@ const DEFAULT_GENERATIONS_PER_SEC: number = 8; // Default (10 gen/sec)
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
+// Dot/Point Colors (for canvas points and slider thumbs)
+const DOT_COLOR: string = TAILWIND_GREEN_500;
+const DOT_BORDER_COLOR: string = '#ffffff';
+const DOT_BORDER_WIDTH: number = 3;
+
 // Curve Drawing Styles
 const BEST_CURVE_LINE_WIDTH: number = 5;
-const BEST_CURVE_COLOR: string = '#ffffff'; // White
+const BEST_CURVE_COLOR: string = TAILWIND_BLUE_500;
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
 const OTHER_CURVE_OPACITY: number = 0.5;
@@ -69,17 +78,14 @@ const CURVE_RESOLUTION: number = 200; // Number of points to draw curves
 // Error Bars
 const ERROR_BAR_LINE_WIDTH: number = 3;
 
-// Data Points
-const POINT_BORDER_WIDTH: number = 2;
-
 // Grid and Axes
 const GRID_LINE_WIDTH: number = 1;
 const AXIS_LINE_WIDTH: number = 2;
 
 // Canvas Colors
-const COLOR_ERROR_BARS: string = '#ff4444'; // Red
-const COLOR_POINTS: string = '#ff6b6b'; // Red
-const COLOR_POINT_BORDER: string = '#fff'; // White
+const COLOR_ERROR_BARS: string = TAILWIND_RED_500;
+const COLOR_POINTS: string = DOT_COLOR;
+const COLOR_POINT_BORDER: string = DOT_BORDER_COLOR;
 const COLOR_BACKGROUND: string = '#1a1a1a'; // Dark gray
 const COLOR_GRID: string = '#333'; // Dark gray
 const COLOR_AXES: string = '#666'; // Gray
@@ -87,7 +93,7 @@ const COLOR_LABELS: string = '#aaa'; // Light gray
 
 // Reactive state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const points = ref<Point[]>([]);
+const allPoints = ref<Point[]>([]); // Full set of points (up to MAX_POINTS)
 const curves = ref<Curve[]>([]);
 const numPoints = ref<number>(DEFAULT_NUM_POINTS);
 const numWeights = ref<number>(DEFAULT_NUM_WEIGHTS);
@@ -97,11 +103,16 @@ let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
 
-// Generate random points in coordinate system
+// Computed: Get the first N points from allPoints based on slider
+const points = computed((): Point[] => {
+  return allPoints.value.slice(0, numPoints.value);
+});
+
+// Generate random points in coordinate system (generates full set up to MAX_POINTS)
 const generateRandomPoints = (): void => {
   const range: number = COORD_MAX - COORD_MIN;
-  points.value = Array.from(
-    { length: numPoints.value },
+  allPoints.value = Array.from(
+    { length: MAX_POINTS },
     (): Point => ({
       x: Math.random() * range + COORD_MIN,
       y: Math.random() * range + COORD_MIN,
@@ -289,7 +300,9 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
 const formatScientific = (value: number, decimals: number = 4): string => {
   const expStr: string = value.toExponential(decimals);
   // Replace 'e' or 'e-' with 'e+' or 'e-' to always show sign on exponent
-  const withExpSign: string = expStr.replace(/e(\d)/, 'e+$1').replace(/e\+\-/, 'e-');
+  const withExpSign: string = expStr
+    .replace(/e(\d)/, 'e+$1')
+    .replace(/e\+\-/, 'e-');
   // Add sign to mantissa if positive
   return value >= 0 ? `+${withExpSign}` : withExpSign;
 };
@@ -304,16 +317,16 @@ const getWeightColor = (weight: number): string => {
   const intensity: number = absWeight / (absWeight + 1);
 
   if (weight < 0) {
-    // Negative - red with varying intensity from white to full red
-    const r: number = 255;
-    const g: number = Math.floor(255 * (1 - intensity));
-    const b: number = Math.floor(255 * (1 - intensity));
+    // Negative - interpolate from white to TAILWIND_RED_500 (#fb2c36 = rgb(251, 44, 54))
+    const r: number = Math.floor(255 + (251 - 255) * intensity);
+    const g: number = Math.floor(255 + (44 - 255) * intensity);
+    const b: number = Math.floor(255 + (54 - 255) * intensity);
     return `rgb(${r}, ${g}, ${b})`;
   } else {
-    // Positive - blue with varying intensity from white to full blue
-    const r: number = Math.floor(255 * (1 - intensity));
-    const g: number = Math.floor(255 * (1 - intensity));
-    const b: number = 255;
+    // Positive - interpolate from white to TAILWIND_BLUE_500 (#2b7fff = rgb(43, 127, 255))
+    const r: number = Math.floor(255 + (43 - 255) * intensity);
+    const g: number = Math.floor(255 + (127 - 255) * intensity);
+    const b: number = Math.floor(255 + (255 - 255) * intensity);
     return `rgb(${r}, ${g}, ${b})`;
   }
 };
@@ -497,7 +510,7 @@ const draw = (): void => {
     ctx.fill();
 
     ctx.strokeStyle = COLOR_POINT_BORDER;
-    ctx.lineWidth = POINT_BORDER_WIDTH;
+    ctx.lineWidth = DOT_BORDER_WIDTH;
     ctx.stroke();
   });
 
@@ -550,10 +563,10 @@ onUnmounted((): void => {
   stopEvolution();
 });
 
-// Regenerate points when numPoints changes
+// Update fitness when numPoints changes (points auto-updates via computed)
 watch(numPoints, (): void => {
-  if (points.value.length > 0) {
-    generateRandomPoints();
+  if (allPoints.value.length > 0) {
+    updateFitness();
   }
 });
 
@@ -625,9 +638,7 @@ watch(numChildren, (): void => {
         {{ polynomialFormula }}
       </h3>
 
-      <div
-        class="flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
-      >
+      <div class="flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0">
         <div
           class="w-12 text-center text-[10px] flex items-center justify-center"
         >
