@@ -842,7 +842,7 @@ watch(numChildren, (): void => {
       </div>
 
 
-      <div class="flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0">
+      <div class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0">
         <div
           class="w-12 text-center text-[10px] flex items-center justify-center"
         >
@@ -862,7 +862,7 @@ watch(numChildren, (): void => {
         </div>
       </div>
 
-      <div class="flex-1 overflow-hidden flex flex-col">
+      <div class="flex-1 overflow-hidden hidden md:flex flex-col">
         <div
           v-for="(curve, index) in sortedCurves"
           :key="curve.id"
