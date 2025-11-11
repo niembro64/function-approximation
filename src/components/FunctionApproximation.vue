@@ -88,6 +88,7 @@ const WEIGHT_PROPORTIONAL_VARIANCE_MIN: number = 0.1; // Minimum variance multip
 // Coordinate System
 const COORD_MIN: number = -1;
 const COORD_MAX: number = 1;
+const CURVE_HORIZONTAL_OVERDRAW: number = 1.0; // Extend curve drawing beyond visible area (draws from -2 to 2)
 
 // Canvas Dimensions
 const CANVAS_SIZE = ref<number>(500);
@@ -643,9 +644,13 @@ const draw = (): void => {
       ctx.globalAlpha = rankIndex === 0 ? 1.0 : OTHER_CURVE_OPACITY;
       ctx.beginPath();
 
-      const range: number = COORD_MAX - COORD_MIN;
+      // Extend drawing range horizontally beyond visible area
+      const drawMin: number = COORD_MIN - CURVE_HORIZONTAL_OVERDRAW;
+      const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
+      const range: number = drawMax - drawMin;
+
       for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
-        const x: number = COORD_MIN + (i / CURVE_RESOLUTION) * range;
+        const x: number = drawMin + (i / CURVE_RESOLUTION) * range;
         const y: number = evaluateCurve(curve, x);
         const coords: CanvasCoords = toCanvasCoords(x, y);
 
