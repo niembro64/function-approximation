@@ -28,30 +28,28 @@ const DEFAULT_NUM_WEIGHTS: number = 16;
 
 const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
-const DEFAULT_NUM_CHILDREN: number = 32;
+const DEFAULT_NUM_CHILDREN: number = 16;
 
 const MIN_GENERATIONS_PER_SEC: number = 1; // Slow (1 gen/sec)
 const MAX_GENERATIONS_PER_SEC: number = 256; // Very fast (1000 gen/sec)
 const DEFAULT_GENERATIONS_PER_SEC: number = 64; // Default (10 gen/sec)
 
 // Point and Curve Generation
-const WEIGHT_RANGE: number = 0.4; // Random weights from -0.2 to 0.2
-const WEIGHT_OFFSET: number = -0.2;
-const POINT_RADIUS: number = 6; // Size of data points on canvas
+const POINT_RADIUS: number = 8; // Size of data points on canvas
 
 // Curve Drawing Styles
-const BEST_CURVE_LINE_WIDTH: number = 3;
+const BEST_CURVE_LINE_WIDTH: number = 5;
 const BEST_CURVE_COLOR: string = '#ffffff'; // White
-const OTHER_CURVE_LINE_WIDTH: number = 1.5;
+const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
-const OTHER_CURVE_OPACITY: number = 0.2;
+const OTHER_CURVE_OPACITY: number = 0.5;
 
 // Genetic Algorithm / Mutation
 type MutationDistribution = 'normal' | 'uniform';
 const MUTATION_DISTRIBUTION_TYPE = 'normal' as MutationDistribution; // Distribution type: 'normal' (Gaussian) or 'uniform'
 const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
-const MUTATION_MAX_VARIANCE: number = 0.01; // Maximum variance (for last index)
-const MUTATION_VARIANCE_EXPONENT: number = 3.0; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
+const MUTATION_MAX_VARIANCE: number = 0.2; // Maximum variance (for last index)
+const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
 const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0]; // Variance multiplier per weight (if empty, uses 1.0 for all)
 
 // Coordinate System
@@ -112,8 +110,8 @@ const generateRandomPoints = (): void => {
   updateFitness();
 };
 
-// Generate random weight
-const randomWeight = (): number => Math.random() * WEIGHT_RANGE + WEIGHT_OFFSET;
+// Generate random weight (starts at 0)
+const randomWeight = (): number => 0;
 
 // Generate curves with random weights
 const generateCurves = (): void => {
@@ -287,23 +285,32 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
   return value >= 0 ? `+${formatted}` : formatted;
 };
 
-// Convert weight value to color (white=0, red=negative, blue=positive)
-const getWeightColor = (weight: number): string => {
-  const maxWeight: number = WEIGHT_RANGE; // Use weight range as max intensity
-  const normalizedValue: number = Math.abs(weight) / maxWeight;
-  const intensity: number = Math.min(normalizedValue, 1); // Clamp to 1
+// Format number in scientific notation with explicit signs on both mantissa and exponent
+const formatScientific = (value: number, decimals: number = 4): string => {
+  const expStr: string = value.toExponential(decimals);
+  // Replace 'e' or 'e-' with 'e+' or 'e-' to always show sign on exponent
+  const withExpSign: string = expStr.replace(/e(\d)/, 'e+$1').replace(/e\+\-/, 'e-');
+  // Add sign to mantissa if positive
+  return value >= 0 ? `+${withExpSign}` : withExpSign;
+};
 
-  if (Math.abs(weight) < 0.01) {
-    // Very close to zero - white
-    return '#ffffff';
-  } else if (weight < 0) {
-    // Negative - red with varying intensity
+// Convert weight value to color (white=0, halfway at 1, full at infinity)
+const getWeightColor = (weight: number): string => {
+  const absWeight: number = Math.abs(weight);
+
+  // Map weight to intensity: 0->0%, 1->50%, infinity->100%
+  // Using formula: intensity = absWeight / (absWeight + 1)
+  // This gives: 0->0, 1->0.5, 2->0.67, 3->0.75, infinity->1
+  const intensity: number = absWeight / (absWeight + 1);
+
+  if (weight < 0) {
+    // Negative - red with varying intensity from white to full red
     const r: number = 255;
     const g: number = Math.floor(255 * (1 - intensity));
     const b: number = Math.floor(255 * (1 - intensity));
     return `rgb(${r}, ${g}, ${b})`;
   } else {
-    // Positive - blue with varying intensity
+    // Positive - blue with varying intensity from white to full blue
     const r: number = Math.floor(255 * (1 - intensity));
     const g: number = Math.floor(255 * (1 - intensity));
     const b: number = 255;
@@ -570,6 +577,22 @@ watch(numChildren, (): void => {
     <div
       class="w-[600px] flex flex-col text-left p-3 bg-ui-bg rounded-lg border-2 border-ui-border overflow-hidden"
     >
+      <!-- Buttons -->
+      <div class="mb-3 flex gap-2">
+        <button
+          @click="generateCurves"
+          class="flex-1 p-2 bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+        >
+          Random Curves
+        </button>
+        <button
+          @click="generateRandomPoints"
+          class="flex-1 p-2 bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+        >
+          Random Points
+        </button>
+      </div>
+
       <!-- Sliders -->
       <div class="mb-3 flex flex-col gap-2">
         <Slider
@@ -603,62 +626,56 @@ watch(numChildren, (): void => {
       </h3>
 
       <div
-        class="flex gap-2 p-1.5 bg-ui-bg-dark rounded font-bold text-ui-text text-xs mb-1.5 shrink-0"
+        class="flex bg-ui-bg-dark font-bold text-ui-text text-xs mb-1 shrink-0"
       >
-        <div class="w-8 flex items-center justify-center text-[10px]">#</div>
-        <div class="flex-1">Weights</div>
-        <div class="w-20 text-right">Fitness</div>
+        <div
+          class="w-12 text-center text-[10px] flex items-center justify-center"
+        >
+          #
+        </div>
+        <div class="flex-1 flex">
+          <div
+            v-for="wIndex in numWeights"
+            :key="wIndex"
+            class="flex-1 text-center text-[10px] flex items-center justify-center py-1"
+          >
+            {{ wIndex - 1 }}
+          </div>
+        </div>
+        <div class="w-24 text-center flex items-center justify-center">
+          Fitness
+        </div>
       </div>
 
-      <div class="flex-1 overflow-hidden mb-2 flex flex-col gap-1">
+      <div class="flex-1 overflow-hidden mb-2 flex flex-col">
         <div
           v-for="(curve, index) in sortedCurves"
           :key="curve.id"
-          class="flex gap-2 p-1.5 rounded font-mono text-xs text-ui-text-normal transition-colors shrink-0"
+          class="flex font-mono text-xs transition-colors shrink-0"
           :class="
             index === 0
-              ? 'bg-ui-bg-highlight border border-ui-border'
+              ? 'bg-ui-bg-highlight'
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
         >
-          <div class="w-8 flex items-center justify-center text-ui-text-muted">
+          <div class="w-12 flex items-center justify-center text-ui-text-muted">
             {{ index + 1 }}
           </div>
-          <div class="flex-1 flex gap-1 items-center flex-wrap">
+          <div class="flex-1 flex">
             <div
               v-for="(weight, wIndex) in curve.weights"
               :key="wIndex"
-              class="w-8 h-6 rounded border border-gray-700"
+              class="flex-1 h-8"
               :style="{ backgroundColor: getWeightColor(weight) }"
               :title="`w${wIndex}: ${formatWithSign(weight)}`"
             />
           </div>
-          <div class="w-20 text-right font-bold text-ui-text text-[11px]">
-            {{ formatWithSign(curve.fitness, 4) }}
+          <div
+            class="w-24 flex items-center justify-center font-bold text-ui-text text-[11px]"
+          >
+            {{ formatScientific(curve.fitness) }}
           </div>
         </div>
-      </div>
-
-      <div
-        class="first:mt-0 first:pt-0 first:border-t-0 mt-4 pt-4 border-t border-ui-border-subtle"
-      >
-        <h4
-          class="m-0 mb-2 text-ui-text-muted text-sm font-normal uppercase tracking-wider"
-        >
-          Initial Generation
-        </h4>
-        <button
-          @click="generateCurves"
-          class="w-full p-2 bg-secondary text-white border-none rounded cursor-pointer transition-all mb-1.5 shrink-0 hover:bg-secondary-hover active:translate-y-px"
-        >
-          Random Curves
-        </button>
-        <button
-          @click="generateRandomPoints"
-          class="w-full p-2 bg-secondary text-white border-none rounded cursor-pointer transition-all mb-1.5 shrink-0 hover:bg-secondary-hover active:translate-y-px"
-        >
-          Random Points
-        </button>
       </div>
     </div>
 
