@@ -13,11 +13,20 @@ interface Curve {
   fitness: number;
 }
 
+interface CanvasCoords {
+  cx: number;
+  cy: number;
+}
+
+interface CoordSystemCoords {
+  x: number;
+  y: number;
+}
+
 // ============================================================
 // Configuration
 // ============================================================
 
-const TAILWIND_BLUE_500: string = '#2b7fff';
 const TAILWIND_RED_500: string = '#fb2c36';
 const TAILWIND_GREEN_500: string = '#00c950';
 
@@ -55,7 +64,7 @@ const OTHER_CURVE_OPACITY: number = 0.5;
 
 // Genetic Algorithm / Mutation
 type MutationDistribution = 'normal' | 'uniform';
-const MUTATION_DISTRIBUTION_TYPE = 'normal' as MutationDistribution; // Distribution type: 'normal' (Gaussian) or 'uniform'
+const MUTATION_DISTRIBUTION_TYPE: MutationDistribution = 'normal'; // Distribution type: 'normal' (Gaussian) or 'uniform'
 const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
 const MUTATION_MAX_VARIANCE: number = 0.2; // Maximum variance (for last index)
 const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
@@ -66,6 +75,11 @@ const ADAPTIVE_VARIANCE_ENABLED: boolean = true;
 const ADAPTIVE_VARIANCE_MIN_SCALE: number = 0.01; // Minimum variance scale (when fitness is very low/good)
 const ADAPTIVE_VARIANCE_MAX_SCALE: number = 1.0; // Maximum variance scale (when fitness is high/bad)
 const ADAPTIVE_VARIANCE_FITNESS_TARGET: number = 0.1; // Fitness value that gives ~50% scale
+
+// Weight-Proportional Variance (variance scales with weight magnitude)
+const WEIGHT_PROPORTIONAL_VARIANCE_ENABLED: boolean = true;
+const WEIGHT_PROPORTIONAL_VARIANCE_FACTOR: number = 0.5; // How much to scale variance based on weight magnitude
+const WEIGHT_PROPORTIONAL_VARIANCE_MIN: number = 0.1; // Minimum variance multiplier (for weights near 0)
 
 // Coordinate System
 const COORD_MIN: number = -1;
@@ -190,6 +204,20 @@ const getAdaptiveVarianceScale = (fitness: number): number => {
   );
 };
 
+// Calculate weight-proportional variance scale based on weight magnitude
+// Larger weights (absolute value) -> larger variance
+// Smaller weights -> smaller variance
+const getWeightProportionalScale = (weight: number): number => {
+  if (!WEIGHT_PROPORTIONAL_VARIANCE_ENABLED) {
+    return 1.0;
+  }
+
+  const absWeight: number = Math.abs(weight);
+  // Scale = min + (absWeight * factor)
+  // This gives proportional scaling with a minimum baseline
+  return WEIGHT_PROPORTIONAL_VARIANCE_MIN + (absWeight * WEIGHT_PROPORTIONAL_VARIANCE_FACTOR);
+};
+
 // Generate curves by mutating the best curve
 // Index 0 = exact copy, last index = maximum variance
 const generateCurvesFromBest = (): void => {
@@ -224,7 +252,13 @@ const generateCurvesFromBest = (): void => {
           // Get variance scale for this weight (default to 1.0 if not specified)
           const varianceScale: number =
             MUTATION_WEIGHT_VARIANCE_SCALES[weightIndex] ?? 1.0;
-          const weightVariance: number = adaptiveVariance * varianceScale;
+
+          // Get weight-proportional scale based on magnitude
+          const weightProportionalScale: number = getWeightProportionalScale(weight);
+
+          // Combine all scaling factors
+          const weightVariance: number = adaptiveVariance * varianceScale * weightProportionalScale;
+
           return applyMutation(weight, weightVariance);
         }
       );
@@ -382,7 +416,7 @@ const calculateCanvasSize = (): void => {
 };
 
 // Convert coordinates from coordinate system range to canvas coordinates
-const toCanvasCoords = (x: number, y: number): { cx: number; cy: number } => {
+const toCanvasCoords = (x: number, y: number): CanvasCoords => {
   const size: number = CANVAS_SIZE.value - 2 * PADDING;
   const range: number = COORD_MAX - COORD_MIN;
   return {
@@ -392,7 +426,7 @@ const toCanvasCoords = (x: number, y: number): { cx: number; cy: number } => {
 };
 
 // Convert canvas coordinates back to coordinate system values
-const toCoordSystemCoords = (cx: number, cy: number): { x: number; y: number } => {
+const toCoordSystemCoords = (cx: number, cy: number): CoordSystemCoords => {
   const size: number = CANVAS_SIZE.value - 2 * PADDING;
   const range: number = COORD_MAX - COORD_MIN;
   return {
@@ -410,9 +444,11 @@ const getCurveColor = (index: number): string => {
 const getPointAtPosition = (cx: number, cy: number): number | null => {
   const hitRadius: number = POINT_RADIUS + 5; // Slightly larger hit area
 
-  for (let i = 0; i < points.value.length; i++) {
-    const point: Point = points.value[i];
-    const coords: { cx: number; cy: number } = toCanvasCoords(point.x, point.y);
+  for (let i: number = 0; i < points.value.length; i++) {
+    const point: Point | undefined = points.value[i];
+    if (point === undefined) continue;
+
+    const coords: CanvasCoords = toCanvasCoords(point.x, point.y);
     const dx: number = cx - coords.cx;
     const dy: number = cy - coords.cy;
     const distance: number = Math.sqrt(dx * dx + dy * dy);
@@ -450,7 +486,7 @@ const handleMouseMove = (event: MouseEvent): void => {
 
   // If dragging, update point position
   if (draggingPointIndex.value !== null) {
-    const coords: { x: number; y: number } = toCoordSystemCoords(cx, cy);
+    const coords: CoordSystemCoords = toCoordSystemCoords(cx, cy);
 
     // Clamp to bounds
     const clampedX: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.x));
@@ -517,16 +553,15 @@ const draw = (): void => {
 
   // X-axis
   ctx.beginPath();
-  const yAxisPos: number = toCanvasCoords(0, 0).cy;
-  ctx.moveTo(PADDING, yAxisPos);
-  ctx.lineTo(CANVAS_SIZE.value - PADDING, yAxisPos);
+  const originCoords: CanvasCoords = toCanvasCoords(0, 0);
+  ctx.moveTo(PADDING, originCoords.cy);
+  ctx.lineTo(CANVAS_SIZE.value - PADDING, originCoords.cy);
   ctx.stroke();
 
   // Y-axis
   ctx.beginPath();
-  const xAxisPos: number = toCanvasCoords(0, 0).cx;
-  ctx.moveTo(xAxisPos, PADDING);
-  ctx.lineTo(xAxisPos, CANVAS_SIZE.value - PADDING);
+  ctx.moveTo(originCoords.cx, PADDING);
+  ctx.lineTo(originCoords.cx, CANVAS_SIZE.value - PADDING);
   ctx.stroke();
 
   // Draw all polynomial curves (worst to best so best is on top)
@@ -545,7 +580,7 @@ const draw = (): void => {
       for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
         const x: number = COORD_MIN + (i / CURVE_RESOLUTION) * range;
         const y: number = evaluateCurve(curve, x);
-        const coords: { cx: number; cy: number } = toCanvasCoords(x, y);
+        const coords: CanvasCoords = toCanvasCoords(x, y);
 
         if (i === 0) {
           ctx.moveTo(coords.cx, coords.cy);
@@ -565,12 +600,12 @@ const draw = (): void => {
     ctx.lineWidth = ERROR_BAR_LINE_WIDTH;
 
     points.value.forEach((point: Point): void => {
-      const pointCoords: { cx: number; cy: number } = toCanvasCoords(
+      const pointCoords: CanvasCoords = toCanvasCoords(
         point.x,
         point.y
       );
       const predictedY: number = evaluateCurve(bestCurve, point.x);
-      const curveCoords: { cx: number; cy: number } = toCanvasCoords(
+      const curveCoords: CanvasCoords = toCanvasCoords(
         point.x,
         predictedY
       );
@@ -584,7 +619,7 @@ const draw = (): void => {
 
   // Draw points
   points.value.forEach((point: Point): void => {
-    const coords: { cx: number; cy: number } = toCanvasCoords(point.x, point.y);
+    const coords: CanvasCoords = toCanvasCoords(point.x, point.y);
 
     ctx.fillStyle = COLOR_POINTS;
     ctx.beginPath();
