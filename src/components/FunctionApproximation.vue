@@ -626,7 +626,7 @@ watch(numChildren, (): void => {
       </h3>
 
       <div
-        class="flex bg-ui-bg-dark font-bold text-ui-text text-xs mb-1 shrink-0"
+        class="flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
       >
         <div
           class="w-12 text-center text-[10px] flex items-center justify-center"
@@ -637,7 +637,7 @@ watch(numChildren, (): void => {
           <div
             v-for="wIndex in numWeights"
             :key="wIndex"
-            class="flex-1 text-center text-[10px] flex items-center justify-center py-1"
+            class="flex-1 text-center text-[10px] flex items-center justify-center"
           >
             {{ wIndex - 1 }}
           </div>
@@ -647,11 +647,11 @@ watch(numChildren, (): void => {
         </div>
       </div>
 
-      <div class="flex-1 overflow-hidden mb-2 flex flex-col">
+      <div class="flex-1 overflow-hidden flex flex-col">
         <div
           v-for="(curve, index) in sortedCurves"
           :key="curve.id"
-          class="flex font-mono text-xs transition-colors shrink-0"
+          class="flex flex-1 font-mono text-xs transition-colors"
           :class="
             index === 0
               ? 'bg-ui-bg-highlight'
@@ -665,7 +665,7 @@ watch(numChildren, (): void => {
             <div
               v-for="(weight, wIndex) in curve.weights"
               :key="wIndex"
-              class="flex-1 h-8"
+              class="flex-1"
               :style="{ backgroundColor: getWeightColor(weight) }"
               :title="`w${wIndex}: ${formatWithSign(weight)}`"
             />
