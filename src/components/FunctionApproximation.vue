@@ -909,7 +909,7 @@ watch(numChildren, (): void => {
         class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
       >
         <div
-          class="w-12 text-center text-[10px] flex items-center justify-center"
+          class="w-8 text-center text-[10px] flex items-center justify-center"
         >
           #
         </div>
@@ -922,7 +922,7 @@ watch(numChildren, (): void => {
             {{ wIndex - 1 }}
           </div>
         </div>
-        <div class="w-24 text-center flex items-center justify-center">
+        <div class="w-20 text-center flex items-center justify-center">
           Fitness
         </div>
       </div>
@@ -938,7 +938,7 @@ watch(numChildren, (): void => {
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
         >
-          <div class="w-12 flex items-center justify-center text-ui-text-muted">
+          <div class="w-8 flex items-center justify-center text-ui-text-muted">
             {{ index + 1 }}
           </div>
           <div class="flex-1 flex">
@@ -951,7 +951,7 @@ watch(numChildren, (): void => {
             />
           </div>
           <div
-            class="w-24 flex items-center justify-center font-bold text-ui-text text-[11px]"
+            class="w-20 flex items-center justify-center font-bold text-ui-text text-[11px]"
           >
             {{ formatScientific(curve.fitness) }}
           </div>

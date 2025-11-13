@@ -11,7 +11,7 @@ const props = defineProps<Props>();
 <template>
   <!-- Function Formula -->
   <div v-if="type === 'function'" class="flex items-center gap-1.5">
-    <span>fᵢ(x) =</span>
+    <span>Function =</span>
     <div class="inline-flex flex-col items-center leading-none">
       <span class="text-[10px]">{{ upperBound }}</span>
       <span class="text-2xl md:text-3xl leading-none">Σ</span>
