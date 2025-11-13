@@ -934,11 +934,20 @@ watch(numChildren, (): void => {
           <div
             v-for="wIndex in numWeights"
             :key="wIndex"
-            class="flex-1 text-center text-sm flex items-center justify-center"
+            class="flex-1 text-center flex items-center justify-center"
+            :class="numWeights > 6 && numWeights <= 20 ? 'text-[10px]' : 'text-sm'"
           >
-            <template v-if="wIndex === 1">1</template>
-            <template v-else-if="wIndex === 2">x</template>
-            <template v-else>x<sup>{{ wIndex - 1 }}</sup></template>
+            <template v-if="numWeights > 20">
+              <!-- No text for more than 20 columns -->
+            </template>
+            <template v-else-if="numWeights > 6">
+              {{ wIndex - 1 }}
+            </template>
+            <template v-else>
+              <template v-if="wIndex === 1">1</template>
+              <template v-else-if="wIndex === 2">x</template>
+              <template v-else>x<sup>{{ wIndex - 1 }}</sup></template>
+            </template>
           </div>
         </div>
         <div class="w-20 text-center flex items-center justify-center">
