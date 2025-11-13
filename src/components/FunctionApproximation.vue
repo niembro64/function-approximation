@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import Slider from './Slider.vue';
+import Formula from './Formula.vue';
 
 interface Point {
   x: number;
@@ -162,6 +163,50 @@ const weightPenalty = ref<number>(
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
+
+// Slider configurations
+const sliderConfigs = [
+  {
+    label: '# Points',
+    model: numPoints,
+    min: MIN_POINTS,
+    max: MAX_POINTS,
+  },
+  {
+    label: '# Weights',
+    model: numWeights,
+    min: MIN_WEIGHTS,
+    max: MAX_WEIGHTS,
+  },
+  {
+    label: '# Children',
+    model: numChildren,
+    min: MIN_CHILDREN,
+    max: MAX_CHILDREN,
+  },
+  {
+    label: 'Speed',
+    model: generationsPerSec,
+    min: MIN_GENERATIONS_PER_SEC,
+    max: MAX_GENERATIONS_PER_SEC,
+  },
+  {
+    label: 'Mutation Variance',
+    model: mutationVariance,
+    min: MIN_MUTATION_VARIANCE,
+    max: MAX_MUTATION_VARIANCE,
+    step: 0.01,
+    decimals: 2,
+  },
+  {
+    label: '↑ Weight Penalty',
+    model: weightPenalty,
+    min: MIN_WEIGHT_PENALTY,
+    max: MAX_WEIGHT_PENALTY,
+    step: 0.01,
+    decimals: 2,
+  },
+];
 
 // Drag state
 const draggingPointIndex = ref<number | null>(null);
@@ -848,74 +893,21 @@ watch(numChildren, (): void => {
       <div
         class="m-0 mb-3 md:mb-4 text-white flex items-center justify-center gap-4 md:gap-6 font-mono text-sm md:text-base"
       >
-        <!-- Function Formula -->
-        <div class="flex items-center gap-1.5">
-          <span>fᵢ(x) =</span>
-          <div class="inline-flex flex-col items-center leading-none">
-            <span class="text-[10px]">{{ upperBound }}</span>
-            <span class="text-2xl md:text-3xl leading-none">Σ</span>
-            <span class="text-[10px]">i=0</span>
-          </div>
-          <span>wᵢxⁱ</span>
-        </div>
-
-        <!-- Fitness Formula -->
-        <div class="flex items-center gap-1.5">
-          <span>Fitness =</span>
-          <div class="inline-flex flex-col items-center leading-none">
-            <span class="text-[9px]">1</span>
-            <span class="border-t border-white px-0.5 text-[9px]">n</span>
-          </div>
-          <div class="inline-flex flex-col items-center leading-none">
-            <span class="text-[10px]">n</span>
-            <span class="text-2xl md:text-3xl leading-none">Σ</span>
-            <span class="text-[10px]">j=1</span>
-          </div>
-          <span>(yⱼ - fᵢ(xⱼ))²</span>
-        </div>
+        <Formula type="function" :upperBound="upperBound" />
+        <Formula type="fitness" :numPoints="numPoints" />
       </div>
 
       <!-- Sliders -->
       <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
         <Slider
-          label="# Points"
-          v-model="numPoints"
-          :min="MIN_POINTS"
-          :max="MAX_POINTS"
-        />
-        <Slider
-          label="# Weights"
-          v-model="numWeights"
-          :min="MIN_WEIGHTS"
-          :max="MAX_WEIGHTS"
-        />
-        <Slider
-          label="# Children"
-          v-model="numChildren"
-          :min="MIN_CHILDREN"
-          :max="MAX_CHILDREN"
-        />
-        <Slider
-          label="Speed"
-          v-model="generationsPerSec"
-          :min="MIN_GENERATIONS_PER_SEC"
-          :max="MAX_GENERATIONS_PER_SEC"
-        />
-        <Slider
-          label="Mutation Variance"
-          v-model="mutationVariance"
-          :min="MIN_MUTATION_VARIANCE"
-          :max="MAX_MUTATION_VARIANCE"
-          :step="0.01"
-          :decimals="2"
-        />
-        <Slider
-          label="↑ Weight Penalty"
-          v-model="weightPenalty"
-          :min="MIN_WEIGHT_PENALTY"
-          :max="MAX_WEIGHT_PENALTY"
-          :step="0.01"
-          :decimals="2"
+          v-for="(config, index) in sliderConfigs"
+          :key="index"
+          :label="config.label"
+          v-model="config.model.value"
+          :min="config.min"
+          :max="config.max"
+          :step="config.step"
+          :decimals="config.decimals"
         />
       </div>
 
