@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import Slider from './Slider.vue';
 import Formula from './Formula.vue';
 import WeightCell from './WeightCell.vue';
+import InfoModal from './InfoModal.vue';
+import { generateScientificNotation } from '../utils/formatters';
 
 interface Point {
   x: number;
@@ -198,6 +200,7 @@ const sliderConfigs = [
     max: MAX_MUTATION_VARIANCE,
     step: 0.01,
     decimals: 2,
+    useScientificNotation: true,
   },
   {
     label: '↑ Weight Penalty',
@@ -206,12 +209,26 @@ const sliderConfigs = [
     max: MAX_WEIGHT_PENALTY,
     step: 0.01,
     decimals: 2,
+    logarithmic: true,
+    logMidpoint: 0.01,
+    useScientificNotation: true,
   },
 ];
 
 // Drag state
 const draggingPointIndex = ref<number | null>(null);
 const hoveredPointIndex = ref<number | null>(null);
+
+// Modal state
+const isInfoModalOpen = ref<boolean>(false);
+
+const openInfoModal = (): void => {
+  isInfoModalOpen.value = true;
+};
+
+const closeInfoModal = (): void => {
+  isInfoModalOpen.value = false;
+};
 
 // Computed: Get the first N points from allPoints based on slider
 const points = computed((): Point[] => {
@@ -476,16 +493,8 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
   return value >= 0 ? `+${formatted}` : formatted;
 };
 
-// Format number in scientific notation with explicit signs on both mantissa and exponent
-const formatScientific = (value: number, decimals: number = 4): string => {
-  const expStr: string = value.toExponential(decimals);
-  // Replace 'e' or 'e-' with 'e+' or 'e-' to always show sign on exponent
-  const withExpSign: string = expStr
-    .replace(/e(\d)/, 'e+$1')
-    .replace(/e\+\-/, 'e-');
-  // Add sign to mantissa if positive
-  return value >= 0 ? `+${withExpSign}` : withExpSign;
-};
+// Alias for the shared utility function
+const formatScientific = generateScientificNotation;
 
 
 // Generate upper bound for summation notation
@@ -867,12 +876,17 @@ watch(numChildren, (): void => {
     <div
       class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto order-2 md:order-1 md:shrink"
     >
-      <!-- Formulas side by side -->
-      <div
-        class="m-0 mb-3 md:mb-4 text-white flex items-center justify-center gap-4 md:gap-6 font-mono text-sm md:text-base"
-      >
-        <Formula type="function" :upperBound="upperBound" />
-        <Formula type="fitness" :numPoints="numPoints" />
+      <!-- Header with Info Button and Title -->
+      <div class="m-0 mb-3 md:mb-4 flex items-center gap-3">
+        <button
+          @click="openInfoModal"
+          class="w-8 h-8 flex items-center justify-center bg-primary text-white border-none rounded-full cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px shrink-0"
+          aria-label="Information"
+          title="Learn more about this project"
+        >
+          <span class="text-sm font-bold">i</span>
+        </button>
+        <h1 class="text-xl md:text-2xl font-bold text-white flex-1">Genetic Algorithm Function Approximation</h1>
       </div>
 
       <!-- Sliders -->
@@ -886,6 +900,9 @@ watch(numChildren, (): void => {
           :max="config.max"
           :step="config.step"
           :decimals="config.decimals"
+          :logarithmic="config.logarithmic"
+          :logMidpoint="config.logMidpoint"
+          :useScientificNotation="config.useScientificNotation"
         />
       </div>
 
@@ -917,9 +934,11 @@ watch(numChildren, (): void => {
           <div
             v-for="wIndex in numWeights"
             :key="wIndex"
-            class="flex-1 text-center text-[10px] flex items-center justify-center"
+            class="flex-1 text-center text-sm flex items-center justify-center"
           >
-            {{ wIndex - 1 }}
+            <template v-if="wIndex === 1">1</template>
+            <template v-else-if="wIndex === 2">x</template>
+            <template v-else>x<sup>{{ wIndex - 1 }}</sup></template>
           </div>
         </div>
         <div class="w-20 text-center flex items-center justify-center">
@@ -978,6 +997,14 @@ watch(numChildren, (): void => {
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
       @touchcancel="handleTouchEnd"
+    />
+
+    <!-- Info Modal -->
+    <InfoModal
+      :isOpen="isInfoModalOpen"
+      :upperBound="upperBound"
+      :numPoints="numPoints"
+      @close="closeInfoModal"
     />
   </div>
 </template>

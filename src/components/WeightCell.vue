@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { generateScientificNotation } from '../utils/formatters';
+
 interface Props {
   weight: number;
   index: number;
@@ -7,14 +9,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// Format number in scientific notation with explicit signs
-const formatScientific = (value: number, decimals: number = 2): string => {
-  const expStr: string = value.toExponential(decimals);
-  const withExpSign: string = expStr
-    .replace(/e(\d)/, 'e+$1')
-    .replace(/e\+\-/, 'e-');
-  return value >= 0 ? `+${withExpSign}` : withExpSign;
-};
+// Alias for the shared utility function
+const formatScientific = generateScientificNotation;
 
 // Format number with explicit sign
 const formatWithSign = (value: number, decimals: number = 2): string => {
@@ -22,12 +18,6 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
   return value >= 0 ? `+${formatted}` : formatted;
 };
 
-// Get power notation string
-const getPowerNotation = (power: number): string => {
-  if (power === 0) return '1';
-  if (power === 1) return 'x';
-  return `x^${power}`;
-};
 
 // Convert weight value to color (white=0, halfway at 1, full at infinity)
 const getWeightColor = (weight: number): string => {
@@ -78,16 +68,13 @@ const getTextColor = (weight: number): string => {
 
 <template>
   <div
-    class="flex-1 flex flex-col items-center justify-center text-[8px] px-0.5 leading-tight"
+    class="flex-1 flex items-center justify-center text-[9px] px-0.5"
     :style="{
       backgroundColor: getWeightColor(weight),
       color: getTextColor(weight)
     }"
     :title="`w${index}: ${formatWithSign(weight)}`"
   >
-    <template v-if="showFormula">
-      <span class="font-mono">{{ formatScientific(weight) }}</span>
-      <span class="font-mono text-[7px]">{{ getPowerNotation(index) }}</span>
-    </template>
+    <span v-if="showFormula" class="font-mono">{{ formatScientific(weight) }}</span>
   </div>
 </template>
