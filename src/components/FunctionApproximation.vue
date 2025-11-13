@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import Slider from './Slider.vue';
 import Formula from './Formula.vue';
+import WeightCell from './WeightCell.vue';
 
 interface Point {
   x: number;
@@ -486,29 +487,6 @@ const formatScientific = (value: number, decimals: number = 4): string => {
   return value >= 0 ? `+${withExpSign}` : withExpSign;
 };
 
-// Convert weight value to color (white=0, halfway at 1, full at infinity)
-const getWeightColor = (weight: number): string => {
-  const absWeight: number = Math.abs(weight);
-
-  // Map weight to intensity: 0->0%, 1->50%, infinity->100%
-  // Using formula: intensity = absWeight / (absWeight + 1)
-  // This gives: 0->0, 1->0.5, 2->0.67, 3->0.75, infinity->1
-  const intensity: number = absWeight / (absWeight + 1);
-
-  if (weight < 0) {
-    // Negative - interpolate from white to TAILWIND_RED_500 (#fb2c36 = rgb(251, 44, 54))
-    const r: number = Math.floor(255 + (251 - 255) * intensity);
-    const g: number = Math.floor(255 + (44 - 255) * intensity);
-    const b: number = Math.floor(255 + (54 - 255) * intensity);
-    return `rgb(${r}, ${g}, ${b})`;
-  } else {
-    // Positive - interpolate from white to TAILWIND_BLUE_500 (#2b7fff = rgb(43, 127, 255))
-    const r: number = Math.floor(255 + (43 - 255) * intensity);
-    const g: number = Math.floor(255 + (127 - 255) * intensity);
-    const b: number = Math.floor(255 + (255 - 255) * intensity);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-};
 
 // Generate upper bound for summation notation
 const upperBound = computed((): string => {
@@ -964,12 +942,12 @@ watch(numChildren, (): void => {
             {{ index + 1 }}
           </div>
           <div class="flex-1 flex">
-            <div
+            <WeightCell
               v-for="(weight, wIndex) in curve.weights"
               :key="wIndex"
-              class="flex-1"
-              :style="{ backgroundColor: getWeightColor(weight) }"
-              :title="`w${wIndex}: ${formatWithSign(weight)}`"
+              :weight="weight"
+              :index="wIndex"
+              :showFormula="numWeights < 6"
             />
           </div>
           <div
