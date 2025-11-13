@@ -65,6 +65,17 @@ const MAX_WEIGHT_PENALTY: number = 1;
 const DEFAULT_WEIGHT_PENALTY_DESKTOP: number = 0;
 const DEFAULT_WEIGHT_PENALTY_MOBILE: number = 0;
 
+// Gradient Descent Parameters
+const MIN_LEARNING_RATE: number = 0.0001;
+const MAX_LEARNING_RATE: number = 1;
+const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.01;
+const DEFAULT_LEARNING_RATE_MOBILE: number = 0.01;
+
+const MIN_ITERATIONS_PER_SEC: number = 1;
+const MAX_ITERATIONS_PER_SEC: number = 256;
+const DEFAULT_ITERATIONS_PER_SEC_DESKTOP: number = 16;
+const DEFAULT_ITERATIONS_PER_SEC_MOBILE: number = 16;
+
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
@@ -163,12 +174,20 @@ const mutationVariance = ref<number>(
 const weightPenalty = ref<number>(
   isMobile() ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP
 );
+const learningRate = ref<number>(
+  isMobile() ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP
+);
+const iterationsPerSec = ref<number>(
+  isMobile()
+    ? DEFAULT_ITERATIONS_PER_SEC_MOBILE
+    : DEFAULT_ITERATIONS_PER_SEC_DESKTOP
+);
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
 
-// Slider configurations
-const sliderConfigs = [
+// Slider configurations for Genetic Algorithm
+const geneticSliderConfigs = [
   {
     label: '# Points',
     model: numPoints,
@@ -215,6 +234,46 @@ const sliderConfigs = [
   },
 ];
 
+// Slider configurations for Gradient Descent
+const gradientSliderConfigs = [
+  {
+    label: '# Points',
+    model: numPoints,
+    min: MIN_POINTS,
+    max: MAX_POINTS,
+  },
+  {
+    label: '# Weights',
+    model: numWeights,
+    min: MIN_WEIGHTS,
+    max: MAX_WEIGHTS,
+  },
+  {
+    label: 'Learning Rate',
+    model: learningRate,
+    min: MIN_LEARNING_RATE,
+    max: MAX_LEARNING_RATE,
+    step: 0.0001,
+    decimals: 4,
+    logarithmic: true,
+    logMidpoint: 0.01,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Speed',
+    model: iterationsPerSec,
+    min: MIN_ITERATIONS_PER_SEC,
+    max: MAX_ITERATIONS_PER_SEC,
+  },
+];
+
+// Computed slider configs based on solution method
+const sliderConfigs = computed(() => {
+  return solutionMethod.value === 'genetic'
+    ? geneticSliderConfigs
+    : gradientSliderConfigs;
+});
+
 // Drag state
 const draggingPointIndex = ref<number | null>(null);
 const hoveredPointIndex = ref<number | null>(null);
@@ -229,6 +288,27 @@ const openInfoModal = (): void => {
 const closeInfoModal = (): void => {
   isInfoModalOpen.value = false;
 };
+
+// Solution method state
+type SolutionMethod = 'genetic' | 'gradient';
+const solutionMethod = ref<SolutionMethod>('genetic');
+
+const toggleSolutionMethod = (): void => {
+  solutionMethod.value = solutionMethod.value === 'genetic' ? 'gradient' : 'genetic';
+  stopEvolution();
+  if (solutionMethod.value === 'genetic') {
+    generateCurves();
+  } else {
+    generateSingleCurve();
+  }
+  startEvolution();
+};
+
+const solutionMethodTitle = computed((): string => {
+  return solutionMethod.value === 'genetic'
+    ? 'Genetic Algorithm'
+    : 'Gradient Descent';
+});
 
 // Computed: Get the first N points from allPoints based on slider
 const points = computed((): Point[] => {
@@ -263,6 +343,20 @@ const generateCurves = (): void => {
       fitness: 0,
     })
   );
+  updateFitness();
+};
+
+// Generate single curve for gradient descent
+const generateSingleCurve = (): void => {
+  curves.value = [
+    {
+      id: 0,
+      weights: Array.from({ length: numWeights.value }, (): number =>
+        randomWeight()
+      ),
+      fitness: 0,
+    },
+  ];
   updateFitness();
 };
 
@@ -325,6 +419,33 @@ const getWeightProportionalScale = (weight: number): number => {
     WEIGHT_PROPORTIONAL_VARIANCE_MIN +
     absWeight * WEIGHT_PROPORTIONAL_VARIANCE_FACTOR
   );
+};
+
+// Perform one gradient descent step
+const gradientDescentStep = (): void => {
+  if (curves.value.length === 0) return;
+
+  const curve: Curve = curves.value[0];
+  const gradients: number[] = new Array(curve.weights.length).fill(0);
+
+  // Calculate gradients for each weight
+  points.value.forEach((point: Point): void => {
+    const predicted: number = evaluateCurve(curve, point.x);
+    const error: number = predicted - point.y;
+
+    // Gradient for each weight: d(MSE)/d(w_i) = 2 * error * x^i / n
+    for (let i: number = 0; i < curve.weights.length; i++) {
+      gradients[i] += (2 * error * Math.pow(point.x, i)) / points.value.length;
+    }
+  });
+
+  // Update weights using gradient descent
+  curve.weights = curve.weights.map(
+    (weight: number, i: number): number =>
+      weight - learningRate.value * gradients[i]
+  );
+
+  updateFitness();
 };
 
 // Generate curves by mutating the best curve
@@ -394,13 +515,24 @@ const animationLoop = (currentTime: number): void => {
   const deltaTime: number = (currentTime - lastFrameTime) / 1000; // Convert to seconds
   lastFrameTime = currentTime;
 
-  // Accumulate generations to run based on desired rate
-  generationAccumulator += deltaTime * generationsPerSec.value;
+  if (solutionMethod.value === 'genetic') {
+    // Accumulate generations to run based on desired rate
+    generationAccumulator += deltaTime * generationsPerSec.value;
 
-  // Run as many generations as accumulated (can be 0, 1, or multiple)
-  while (generationAccumulator >= 1) {
-    generateCurvesFromBest();
-    generationAccumulator -= 1;
+    // Run as many generations as accumulated (can be 0, 1, or multiple)
+    while (generationAccumulator >= 1) {
+      generateCurvesFromBest();
+      generationAccumulator -= 1;
+    }
+  } else {
+    // Gradient descent mode
+    generationAccumulator += deltaTime * iterationsPerSec.value;
+
+    // Run as many iterations as accumulated
+    while (generationAccumulator >= 1) {
+      gradientDescentStep();
+      generationAccumulator -= 1;
+    }
   }
 
   // Draw the canvas
@@ -836,10 +968,14 @@ const handleResize = (): void => {
 onMounted((): void => {
   calculateCanvasSize();
   generateRandomPoints();
-  generateCurves();
+  if (solutionMethod.value === 'genetic') {
+    generateCurves();
+  } else {
+    generateSingleCurve();
+  }
   draw();
   window.addEventListener('resize', handleResize);
-  startEvolution(); // Auto-start evolution
+  startEvolution(); // Auto-start evolution/gradient descent
 });
 
 onUnmounted((): void => {
@@ -857,7 +993,11 @@ watch(numPoints, (): void => {
 // Regenerate curves when numWeights changes
 watch(numWeights, (): void => {
   if (curves.value.length > 0) {
-    generateCurves();
+    if (solutionMethod.value === 'genetic') {
+      generateCurves();
+    } else {
+      generateSingleCurve();
+    }
   }
 });
 
@@ -886,7 +1026,13 @@ watch(numChildren, (): void => {
         >
           <span class="text-sm font-bold">i</span>
         </button>
-        <h1 class="text-xl md:text-2xl font-bold text-white flex-1">Genetic Algorithm Function Approximation</h1>
+        <button
+          @click="toggleSolutionMethod"
+          class="flex-1 p-2 text-sm md:text-base font-bold bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px text-left"
+          :title="`Switch to ${solutionMethod === 'genetic' ? 'Gradient Descent' : 'Genetic Algorithm'}`"
+        >
+          {{ solutionMethodTitle }}
+        </button>
       </div>
 
       <!-- Sliders -->
@@ -909,10 +1055,18 @@ watch(numChildren, (): void => {
       <!-- Buttons -->
       <div class="mb-2 md:mb-3 flex gap-2">
         <button
+          v-if="solutionMethod === 'genetic'"
           @click="generateCurves"
           class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
         >
           New Curves
+        </button>
+        <button
+          v-else
+          @click="generateSingleCurve"
+          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+        >
+          New Curve
         </button>
         <button
           @click="generateRandomPoints"
@@ -922,6 +1076,7 @@ watch(numChildren, (): void => {
         </button>
       </div>
 
+      <!-- Table -->
       <div
         class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
       >
@@ -961,13 +1116,13 @@ watch(numChildren, (): void => {
           :key="curve.id"
           class="flex flex-1 font-mono text-xs transition-colors"
           :class="
-            index === 0
+            index === 0 || solutionMethod === 'gradient'
               ? 'bg-ui-bg-highlight'
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
         >
           <div class="w-8 flex items-center justify-center text-ui-text-muted">
-            {{ index + 1 }}
+            {{ solutionMethod === 'gradient' ? '' : index + 1 }}
           </div>
           <div class="flex-1 flex">
             <WeightCell
