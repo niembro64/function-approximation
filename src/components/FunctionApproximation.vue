@@ -55,7 +55,7 @@ const DEFAULT_NUM_CHILDREN_MOBILE: number = 5;
 const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
 const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 60;
-const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 60;
+const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 30;
 
 const MIN_MUTATION_VARIANCE: number = 0.01;
 const MAX_MUTATION_VARIANCE: number = 2;
@@ -72,11 +72,6 @@ const MIN_LEARNING_RATE: number = 0.0001;
 const MAX_LEARNING_RATE: number = 1;
 const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.1;
 const DEFAULT_LEARNING_RATE_MOBILE: number = 0.1;
-
-const MIN_ITERATIONS_PER_SEC: number = 1;
-const MAX_ITERATIONS_PER_SEC: number = 256;
-const DEFAULT_ITERATIONS_PER_SEC_DESKTOP: number = 16;
-const DEFAULT_ITERATIONS_PER_SEC_MOBILE: number = 16;
 
 // Adam Optimizer Parameters
 const MIN_ADAM_LEARNING_RATE: number = 0.0001;
@@ -207,11 +202,6 @@ const weightPenalty = ref<number>(
 const learningRate = ref<number>(
   isMobile() ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP
 );
-const iterationsPerSec = ref<number>(
-  isMobile()
-    ? DEFAULT_ITERATIONS_PER_SEC_MOBILE
-    : DEFAULT_ITERATIONS_PER_SEC_DESKTOP
-);
 const adamLearningRate = ref<number>(
   isMobile() ? DEFAULT_ADAM_LEARNING_RATE_MOBILE : DEFAULT_ADAM_LEARNING_RATE_DESKTOP
 );
@@ -251,19 +241,12 @@ const commonSliderConfigs = [
 
 // Speed slider - different models for each method
 const speedSliderConfig = computed(() => {
-  return solutionMethod.value === 'genetic'
-    ? {
-        label: 'Speed',
-        model: generationsPerSec,
-        min: MIN_GENERATIONS_PER_SEC,
-        max: MAX_GENERATIONS_PER_SEC,
-      }
-    : {
-        label: 'Speed',
-        model: iterationsPerSec,
-        min: MIN_ITERATIONS_PER_SEC,
-        max: MAX_ITERATIONS_PER_SEC,
-      };
+  return {
+    label: 'Speed',
+    model: generationsPerSec,
+    min: MIN_GENERATIONS_PER_SEC,
+    max: MAX_GENERATIONS_PER_SEC,
+  };
 });
 
 // Weight Penalty slider - common configuration
@@ -306,7 +289,7 @@ const gradientSpecificSliders = [
     min: MIN_LEARNING_RATE,
     max: MAX_LEARNING_RATE,
     step: 0.0001,
-    decimals: 4,
+    decimals: 2,
     logarithmic: true,
     logMidpoint: 0.01,
     useScientificNotation: true,
@@ -321,7 +304,7 @@ const adamSpecificSliders = [
     min: MIN_ADAM_LEARNING_RATE,
     max: MAX_ADAM_LEARNING_RATE,
     step: 0.0001,
-    decimals: 4,
+    decimals: 2,
     logarithmic: true,
     logMidpoint: 0.01,
     useScientificNotation: true,
@@ -332,7 +315,8 @@ const adamSpecificSliders = [
     min: MIN_ADAM_BETA1,
     max: MAX_ADAM_BETA1,
     step: 0.001,
-    decimals: 3,
+    decimals: 2,
+    useScientificNotation: true,
   },
   {
     label: 'Beta2 (RMSProp)',
@@ -340,7 +324,8 @@ const adamSpecificSliders = [
     min: MIN_ADAM_BETA2,
     max: MAX_ADAM_BETA2,
     step: 0.0001,
-    decimals: 4,
+    decimals: 2,
+    useScientificNotation: true,
   },
   {
     label: 'Epsilon',
@@ -704,7 +689,7 @@ const animationLoop = (currentTime: number): void => {
     }
   } else {
     // Gradient descent or Adam mode
-    generationAccumulator += deltaTime * iterationsPerSec.value;
+    generationAccumulator += deltaTime * generationsPerSec.value;
 
     // Run as many iterations as accumulated
     while (generationAccumulator >= 1) {

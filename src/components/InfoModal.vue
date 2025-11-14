@@ -38,7 +38,7 @@ const handleBackdropClick = (event: MouseEvent): void => {
         >
           <!-- Header -->
           <div class="flex justify-between items-start mb-4">
-            <h2 class="text-2xl font-bold text-white">Genetic Algorithm Function Approximation</h2>
+            <h2 class="text-2xl font-bold text-white">Function Approximation</h2>
             <button
               @click="handleClose"
               class="text-ui-text hover:text-white text-2xl leading-none"
@@ -53,9 +53,9 @@ const handleBackdropClick = (event: MouseEvent): void => {
             <section>
               <h3 class="text-lg font-bold text-white mb-2">Overview</h3>
               <p>
-                This project uses a genetic algorithm to approximate data points with polynomial functions.
-                The algorithm evolves a population of candidate solutions (polynomials) over generations,
-                continuously improving their fitness by minimizing the error between predicted and actual values.
+                This project demonstrates three different optimization algorithms for approximating data points with polynomial functions.
+                Each algorithm continuously improves its solution by minimizing the error between predicted and actual values.
+                Click the title button to switch between algorithms and compare their performance.
               </p>
             </section>
 
@@ -72,55 +72,95 @@ const handleBackdropClick = (event: MouseEvent): void => {
             </section>
 
             <section>
-              <h3 class="text-lg font-bold text-white mb-2">How It Works</h3>
-              <ul class="list-disc list-inside space-y-2">
-                <li>
-                  <strong>Population:</strong> Multiple polynomial functions (children) compete each generation
-                </li>
-                <li>
-                  <strong>Fitness:</strong> Measured by Mean Squared Error (MSE) - lower is better
-                </li>
-                <li>
-                  <strong>Selection:</strong> The best-performing function is chosen as the parent
-                </li>
-                <li>
-                  <strong>Mutation:</strong> Child functions are created by adding random variations to the parent's weights
-                </li>
-                <li>
-                  <strong>Evolution:</strong> This process repeats continuously, gradually improving the fit
-                </li>
-              </ul>
+              <h3 class="text-lg font-bold text-white mb-2">Algorithms</h3>
+
+              <div class="space-y-3">
+                <div>
+                  <h4 class="font-bold text-green-600 mb-1">Genetic Algorithm</h4>
+                  <p class="mb-2">
+                    Evolves a population of candidate solutions through natural selection and mutation.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>Population:</strong> Multiple polynomial functions (children) compete each generation</li>
+                    <li><strong>Selection:</strong> The best-performing function becomes the parent</li>
+                    <li><strong>Mutation:</strong> Children are created by adding random variations to parent weights</li>
+                    <li><strong>Parameters:</strong> # Children, Mutation Variance</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 class="font-bold text-blue-500 mb-1">Gradient Descent</h4>
+                  <p class="mb-2">
+                    Uses calculus to compute the gradient (slope) of the error function and updates weights in the direction that reduces error.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>Gradient:</strong> Computes partial derivatives of MSE with respect to each weight</li>
+                    <li><strong>Update:</strong> w ← w - α∇E (weight minus learning rate times gradient)</li>
+                    <li><strong>Regularization:</strong> L2 penalty prevents overfitting by penalizing large weights</li>
+                    <li><strong>Parameters:</strong> Learning Rate (α)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 class="font-bold text-yellow-600 mb-1">Adam Optimizer</h4>
+                  <p class="mb-2">
+                    Adaptive Moment Estimation - combines momentum and adaptive learning rates for faster, more stable convergence.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>Momentum (β₁):</strong> Exponential moving average of gradients for smoother updates</li>
+                    <li><strong>RMSProp (β₂):</strong> Exponential moving average of squared gradients for adaptive learning rates</li>
+                    <li><strong>Bias Correction:</strong> Adjusts moment estimates during early iterations</li>
+                    <li><strong>Parameters:</strong> Learning Rate, Beta1, Beta2, Epsilon</li>
+                  </ul>
+                </div>
+              </div>
             </section>
 
             <section>
               <h3 class="text-lg font-bold text-white mb-2">Controls</h3>
-              <ul class="list-disc list-inside space-y-2">
-                <li>
-                  <strong># Points:</strong> Number of data points to fit
-                </li>
-                <li>
-                  <strong># Weights:</strong> Degree of polynomial (number of coefficients)
-                </li>
-                <li>
-                  <strong># Children:</strong> Population size per generation
-                </li>
-                <li>
-                  <strong>Speed:</strong> Generations per second
-                </li>
-                <li>
-                  <strong>Mutation Variance:</strong> How much child weights can differ from parent
-                </li>
-                <li>
-                  <strong>Weight Penalty:</strong> Regularization to prevent overfitting by penalizing large weights
-                </li>
-              </ul>
+
+              <div class="mb-3">
+                <h4 class="font-bold text-ui-text mb-1">Common Parameters</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong># Points:</strong> Number of data points to fit</li>
+                  <li><strong># Weights:</strong> Degree of polynomial (number of coefficients)</li>
+                  <li><strong>Speed:</strong> Iterations per second for all algorithms</li>
+                  <li><strong>Weight Penalty:</strong> L2 regularization strength to prevent overfitting</li>
+                </ul>
+              </div>
+
+              <div class="mb-3">
+                <h4 class="font-bold text-green-600 mb-1">Genetic Algorithm</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong># Children:</strong> Population size per generation</li>
+                  <li><strong>Mutation Variance:</strong> How much child weights can differ from parent</li>
+                </ul>
+              </div>
+
+              <div class="mb-3">
+                <h4 class="font-bold text-blue-500 mb-1">Gradient Descent</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong>Learning Rate:</strong> Step size for weight updates</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 class="font-bold text-yellow-600 mb-1">Adam Optimizer</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong>Learning Rate:</strong> Base step size for updates</li>
+                  <li><strong>Beta1:</strong> Momentum decay rate (typically 0.9-0.99)</li>
+                  <li><strong>Beta2:</strong> RMSProp decay rate (typically 0.999)</li>
+                  <li><strong>Epsilon:</strong> Numerical stability constant (typically 1e-8)</li>
+                </ul>
+              </div>
             </section>
 
             <section>
               <h3 class="text-lg font-bold text-white mb-2">Interaction</h3>
               <p>
-                Click and drag the green points on the canvas to move them. The algorithm will continuously
-                adapt to find the best polynomial fit for your custom data configuration.
+                Click and drag the colored points on the canvas to move them. All algorithms will continuously
+                adapt to find the best polynomial fit for your custom data configuration. Click the title button
+                to cycle through different algorithms and observe how they approach the same problem differently.
               </p>
             </section>
           </div>
