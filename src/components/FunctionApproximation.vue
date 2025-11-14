@@ -34,6 +34,7 @@ interface CoordSystemCoords {
 const TAILWIND_RED_500: string = '#fb2c36';
 const TAILWIND_GREEN_600: string = '#16a34a';
 const TAILWIND_BLUE_500: string = '#3b82f6';
+const TAILWIND_YELLOW_600: string = '#ca8a04';
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -53,8 +54,8 @@ const DEFAULT_NUM_CHILDREN_MOBILE: number = 5;
 
 const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
-const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 16;
-const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 16;
+const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 60;
+const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 60;
 
 const MIN_MUTATION_VARIANCE: number = 0.01;
 const MAX_MUTATION_VARIANCE: number = 2;
@@ -77,12 +78,35 @@ const MAX_ITERATIONS_PER_SEC: number = 256;
 const DEFAULT_ITERATIONS_PER_SEC_DESKTOP: number = 16;
 const DEFAULT_ITERATIONS_PER_SEC_MOBILE: number = 16;
 
+// Adam Optimizer Parameters
+const MIN_ADAM_LEARNING_RATE: number = 0.0001;
+const MAX_ADAM_LEARNING_RATE: number = 1;
+const DEFAULT_ADAM_LEARNING_RATE_DESKTOP: number = 0.01;
+const DEFAULT_ADAM_LEARNING_RATE_MOBILE: number = 0.01;
+
+const MIN_ADAM_BETA1: number = 0;
+const MAX_ADAM_BETA1: number = 0.999;
+const DEFAULT_ADAM_BETA1_DESKTOP: number = 0.97;
+const DEFAULT_ADAM_BETA1_MOBILE: number = 0.97;
+
+const MIN_ADAM_BETA2: number = 0;
+const MAX_ADAM_BETA2: number = 0.9999;
+const DEFAULT_ADAM_BETA2_DESKTOP: number = 0.999;
+const DEFAULT_ADAM_BETA2_MOBILE: number = 0.999;
+
+const MIN_ADAM_EPSILON: number = 1e-10;
+const MAX_ADAM_EPSILON: number = 1e-6;
+const DEFAULT_ADAM_EPSILON_DESKTOP: number = 1e-8;
+const DEFAULT_ADAM_EPSILON_MOBILE: number = 1e-8;
+
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
 // Dot/Point Colors (for canvas points and slider thumbs) - dynamic based on method
 const getDotColor = (): string => {
-  return solutionMethod.value === 'genetic' ? TAILWIND_GREEN_600 : TAILWIND_BLUE_500;
+  if (solutionMethod.value === 'genetic') return TAILWIND_GREEN_600;
+  if (solutionMethod.value === 'gradient') return TAILWIND_BLUE_500;
+  return TAILWIND_YELLOW_600;
 };
 const DOT_BORDER_COLOR: string = '#ffffff';
 const DOT_BORDER_WIDTH: number = 3;
@@ -90,7 +114,9 @@ const DOT_BORDER_WIDTH: number = 3;
 // Curve Drawing Styles - dynamic based on method
 const BEST_CURVE_LINE_WIDTH: number = 5;
 const getBestCurveColor = (): string => {
-  return solutionMethod.value === 'genetic' ? TAILWIND_GREEN_600 : TAILWIND_BLUE_500;
+  if (solutionMethod.value === 'genetic') return TAILWIND_GREEN_600;
+  if (solutionMethod.value === 'gradient') return TAILWIND_BLUE_500;
+  return TAILWIND_YELLOW_600;
 };
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
@@ -186,9 +212,26 @@ const iterationsPerSec = ref<number>(
     ? DEFAULT_ITERATIONS_PER_SEC_MOBILE
     : DEFAULT_ITERATIONS_PER_SEC_DESKTOP
 );
+const adamLearningRate = ref<number>(
+  isMobile() ? DEFAULT_ADAM_LEARNING_RATE_MOBILE : DEFAULT_ADAM_LEARNING_RATE_DESKTOP
+);
+const adamBeta1 = ref<number>(
+  isMobile() ? DEFAULT_ADAM_BETA1_MOBILE : DEFAULT_ADAM_BETA1_DESKTOP
+);
+const adamBeta2 = ref<number>(
+  isMobile() ? DEFAULT_ADAM_BETA2_MOBILE : DEFAULT_ADAM_BETA2_DESKTOP
+);
+const adamEpsilon = ref<number>(
+  isMobile() ? DEFAULT_ADAM_EPSILON_MOBILE : DEFAULT_ADAM_EPSILON_DESKTOP
+);
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
+
+// Adam optimizer state (moment estimates)
+const adamM = ref<number[]>([]);  // First moment (mean)
+const adamV = ref<number[]>([]);  // Second moment (variance)
+const adamT = ref<number>(0);     // Time step
 
 // Common slider configurations for both methods
 const commonSliderConfigs = [
@@ -270,11 +313,58 @@ const gradientSpecificSliders = [
   },
 ];
 
+// Adam Optimizer specific sliders
+const adamSpecificSliders = [
+  {
+    label: 'Learning Rate',
+    model: adamLearningRate,
+    min: MIN_ADAM_LEARNING_RATE,
+    max: MAX_ADAM_LEARNING_RATE,
+    step: 0.0001,
+    decimals: 4,
+    logarithmic: true,
+    logMidpoint: 0.01,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Beta1 (Momentum)',
+    model: adamBeta1,
+    min: MIN_ADAM_BETA1,
+    max: MAX_ADAM_BETA1,
+    step: 0.001,
+    decimals: 3,
+  },
+  {
+    label: 'Beta2 (RMSProp)',
+    model: adamBeta2,
+    min: MIN_ADAM_BETA2,
+    max: MAX_ADAM_BETA2,
+    step: 0.0001,
+    decimals: 4,
+  },
+  {
+    label: 'Epsilon',
+    model: adamEpsilon,
+    min: MIN_ADAM_EPSILON,
+    max: MAX_ADAM_EPSILON,
+    step: 1e-10,
+    decimals: 2,
+    logarithmic: true,
+    logMidpoint: 1e-8,
+    useScientificNotation: true,
+  },
+];
+
 // Computed slider configs based on solution method
 const sliderConfigs = computed(() => {
-  const specificSliders = solutionMethod.value === 'genetic'
-    ? geneticSpecificSliders
-    : gradientSpecificSliders;
+  let specificSliders;
+  if (solutionMethod.value === 'genetic') {
+    specificSliders = geneticSpecificSliders;
+  } else if (solutionMethod.value === 'gradient') {
+    specificSliders = gradientSpecificSliders;
+  } else {
+    specificSliders = adamSpecificSliders;
+  }
   return [
     ...commonSliderConfigs,
     speedSliderConfig.value,
@@ -299,24 +389,38 @@ const closeInfoModal = (): void => {
 };
 
 // Solution method state
-type SolutionMethod = 'genetic' | 'gradient';
+type SolutionMethod = 'genetic' | 'gradient' | 'adam';
 const solutionMethod = ref<SolutionMethod>('genetic');
 
 const toggleSolutionMethod = (): void => {
-  solutionMethod.value = solutionMethod.value === 'genetic' ? 'gradient' : 'genetic';
+  // Cycle through: genetic -> gradient -> adam -> genetic
+  if (solutionMethod.value === 'genetic') {
+    solutionMethod.value = 'gradient';
+  } else if (solutionMethod.value === 'gradient') {
+    solutionMethod.value = 'adam';
+  } else {
+    solutionMethod.value = 'genetic';
+  }
+
   stopEvolution();
   if (solutionMethod.value === 'genetic') {
     generateCurves();
   } else {
     generateSingleCurve();
+    // Reset Adam state when switching to Adam
+    if (solutionMethod.value === 'adam') {
+      adamM.value = [];
+      adamV.value = [];
+      adamT.value = 0;
+    }
   }
   startEvolution();
 };
 
 const solutionMethodTitle = computed((): string => {
-  return solutionMethod.value === 'genetic'
-    ? 'Genetic Algorithm'
-    : 'Gradient Descent';
+  if (solutionMethod.value === 'genetic') return 'Genetic Algorithm';
+  if (solutionMethod.value === 'gradient') return 'Gradient Descent';
+  return 'Adam Optimizer';
 });
 
 // Computed: Get the first N points from allPoints based on slider
@@ -465,6 +569,63 @@ const gradientDescentStep = (): void => {
   updateFitness();
 };
 
+// Perform one Adam optimization step
+const adamStep = (): void => {
+  if (curves.value.length === 0) return;
+
+  const curve: Curve = curves.value[0];
+
+  // Initialize Adam state if needed
+  if (adamM.value.length !== curve.weights.length) {
+    adamM.value = new Array(curve.weights.length).fill(0);
+    adamV.value = new Array(curve.weights.length).fill(0);
+    adamT.value = 0;
+  }
+
+  // Increment time step
+  adamT.value += 1;
+
+  const gradients: number[] = new Array(curve.weights.length).fill(0);
+
+  // Calculate gradients for each weight
+  points.value.forEach((point: Point): void => {
+    const predicted: number = evaluateCurve(curve, point.x);
+    const error: number = predicted - point.y;
+
+    // Gradient for each weight: d(MSE)/d(w_i) = 2 * error * x^i / n
+    for (let i: number = 0; i < curve.weights.length; i++) {
+      gradients[i] += (2 * error * Math.pow(point.x, i)) / points.value.length;
+    }
+  });
+
+  // Add L2 regularization gradient
+  if (weightPenalty.value > 0) {
+    for (let i: number = 0; i < curve.weights.length; i++) {
+      gradients[i] += 2 * weightPenalty.value * curve.weights[i];
+    }
+  }
+
+  // Update weights using Adam optimizer
+  curve.weights = curve.weights.map((weight: number, i: number): number => {
+    // Update biased first moment estimate
+    adamM.value[i] = adamBeta1.value * adamM.value[i] + (1 - adamBeta1.value) * gradients[i];
+
+    // Update biased second moment estimate
+    adamV.value[i] = adamBeta2.value * adamV.value[i] + (1 - adamBeta2.value) * gradients[i] * gradients[i];
+
+    // Compute bias-corrected first moment estimate
+    const mHat: number = adamM.value[i] / (1 - Math.pow(adamBeta1.value, adamT.value));
+
+    // Compute bias-corrected second moment estimate
+    const vHat: number = adamV.value[i] / (1 - Math.pow(adamBeta2.value, adamT.value));
+
+    // Update weight
+    return weight - adamLearningRate.value * mHat / (Math.sqrt(vHat) + adamEpsilon.value);
+  });
+
+  updateFitness();
+};
+
 // Generate curves by mutating the best curve
 // Index 0 = exact copy, last index = maximum variance
 const generateCurvesFromBest = (): void => {
@@ -542,12 +703,16 @@ const animationLoop = (currentTime: number): void => {
       generationAccumulator -= 1;
     }
   } else {
-    // Gradient descent mode
+    // Gradient descent or Adam mode
     generationAccumulator += deltaTime * iterationsPerSec.value;
 
     // Run as many iterations as accumulated
     while (generationAccumulator >= 1) {
-      gradientDescentStep();
+      if (solutionMethod.value === 'gradient') {
+        gradientDescentStep();
+      } else {
+        adamStep();
+      }
       generationAccumulator -= 1;
     }
   }
