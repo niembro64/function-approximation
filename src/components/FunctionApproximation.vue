@@ -39,13 +39,13 @@ const TAILWIND_YELLOW_600: string = '#ca8a04';
 // Slider Ranges
 const MIN_POINTS: number = 1;
 const MAX_POINTS: number = 16;
-const DEFAULT_NUM_POINTS_DESKTOP: number = 3;
-const DEFAULT_NUM_POINTS_MOBILE: number = 2;
+const DEFAULT_NUM_POINTS_DESKTOP: number = 5;
+const DEFAULT_NUM_POINTS_MOBILE: number = 5;
 
 const MIN_WEIGHTS: number = 1;
 const MAX_WEIGHTS: number = 36;
 const DEFAULT_NUM_WEIGHTS_DESKTOP: number = 16;
-const DEFAULT_NUM_WEIGHTS_MOBILE: number = 2;
+const DEFAULT_NUM_WEIGHTS_MOBILE: number = 16;
 
 const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
@@ -55,7 +55,7 @@ const DEFAULT_NUM_CHILDREN_MOBILE: number = 5;
 const MIN_GENERATIONS_PER_SEC: number = 1;
 const MAX_GENERATIONS_PER_SEC: number = 256;
 const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 60;
-const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 30;
+const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 60;
 
 const MIN_MUTATION_VARIANCE: number = 0.01;
 const MAX_MUTATION_VARIANCE: number = 2;
@@ -76,8 +76,8 @@ const DEFAULT_LEARNING_RATE_MOBILE: number = 0.1;
 // Adam Optimizer Parameters
 const MIN_ADAM_LEARNING_RATE: number = 0.0001;
 const MAX_ADAM_LEARNING_RATE: number = 1;
-const DEFAULT_ADAM_LEARNING_RATE_DESKTOP: number = 0.01;
-const DEFAULT_ADAM_LEARNING_RATE_MOBILE: number = 0.01;
+const DEFAULT_ADAM_LEARNING_RATE_DESKTOP: number = 0.1;
+const DEFAULT_ADAM_LEARNING_RATE_MOBILE: number = 0.1;
 
 const MIN_ADAM_BETA1: number = 0;
 const MAX_ADAM_BETA1: number = 0.999;
@@ -350,11 +350,12 @@ const sliderConfigs = computed(() => {
   } else {
     specificSliders = adamSpecificSliders;
   }
+  // Reverse order: specific sliders first, then common sliders at bottom
   return [
-    ...commonSliderConfigs,
-    speedSliderConfig.value,
-    weightPenaltySliderConfig,
     ...specificSliders,
+    weightPenaltySliderConfig,
+    speedSliderConfig.value,
+    ...commonSliderConfigs.slice().reverse(),
   ];
 });
 
@@ -1178,33 +1179,11 @@ watch(numChildren, (): void => {
 
 <template>
   <div
-    class="flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
+    class="h-screen md:h-auto flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
   >
     <div
-      class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto order-2 md:order-1 md:shrink"
+      class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
     >
-      <!-- Header with Info Button and Title -->
-      <div class="m-0 mb-3 md:mb-4 flex items-center gap-3">
-        <button
-          @click="openInfoModal"
-          class="w-8 h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all hover:bg-gray-500 active:translate-y-px shrink-0"
-          aria-label="Information"
-          title="Learn more about this project"
-        >
-          <span class="text-sm font-bold">i</span>
-        </button>
-        <button
-          @click="toggleSolutionMethod"
-          class="flex-1 p-2 text-sm md:text-base font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-left"
-          :style="{ backgroundColor: getDotColor() }"
-          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
-          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
-          :title="`Switch to ${solutionMethod === 'genetic' ? 'Gradient Descent' : 'Genetic Algorithm'}`"
-        >
-          {{ solutionMethodTitle }}
-        </button>
-      </div>
-
       <!-- Sliders -->
       <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
         <Slider
@@ -1223,36 +1202,62 @@ watch(numChildren, (): void => {
         />
       </div>
 
-      <!-- Buttons -->
-      <div class="mb-2 md:mb-3 flex gap-2">
+      <!-- All Buttons -->
+      <div class="mb-2 md:mb-3 flex items-stretch gap-2">
+        <button
+          @click="openInfoModal"
+          class="w-8 h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all hover:bg-gray-500 active:translate-y-px shrink-0 self-center"
+          aria-label="Information"
+          title="Learn more about this project"
+        >
+          <span class="text-sm font-bold">i</span>
+        </button>
+        <button
+          @click="toggleSolutionMethod"
+          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-center flex flex-col items-center justify-center"
+          :style="{ backgroundColor: getDotColor() }"
+          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
+          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
+          :title="`Switch to ${solutionMethod === 'genetic' ? 'Gradient Descent' : 'Genetic Algorithm'}`"
+        >
+          <span v-if="solutionMethod === 'genetic'">Genetic</span>
+          <span v-else-if="solutionMethod === 'gradient'">Gradient</span>
+          <span v-else>Adam</span>
+          <span v-if="solutionMethod === 'genetic'">Algorithm</span>
+          <span v-else-if="solutionMethod === 'gradient'">Descent</span>
+          <span v-else>Optimizer</span>
+        </button>
         <button
           v-if="solutionMethod === 'genetic'"
           @click="generateCurves"
-          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor(), '&:hover': { filter: 'brightness(0.9)' } }"
           @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
           @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
-          New Curves
+          <span>New</span>
+          <span>Curves</span>
         </button>
         <button
           v-else
           @click="generateSingleCurve"
-          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor() }"
           @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
           @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
-          New Curve
+          <span>New</span>
+          <span>Curve</span>
         </button>
         <button
           @click="generateRandomPoints"
-          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor() }"
           @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
           @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
-          New Points
+          <span>New</span>
+          <span>Points</span>
         </button>
       </div>
 
@@ -1326,7 +1331,7 @@ watch(numChildren, (): void => {
       ref="canvasRef"
       :width="CANVAS_SIZE * CANVAS_SCALE"
       :height="CANVAS_SIZE * CANVAS_SCALE"
-      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full flex-1 max-w-full object-contain md:max-w-[66vw] md:h-full md:flex-initial"
+      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain md:max-w-[66vw] md:h-full md:flex-initial"
       :style="{
         cursor:
           hoveredPointIndex !== null || draggingPointIndex !== null
