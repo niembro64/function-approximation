@@ -345,17 +345,25 @@ const sliderConfigs = computed(() => {
   let specificSliders;
   if (solutionMethod.value === 'genetic') {
     specificSliders = geneticSpecificSliders;
+    // For genetic: specific sliders, then weight penalty, speed, common
+    return [
+      ...specificSliders,
+      weightPenaltySliderConfig,
+      speedSliderConfig.value,
+      ...commonSliderConfigs.slice().reverse(),
+    ];
   } else if (solutionMethod.value === 'gradient') {
     specificSliders = gradientSpecificSliders;
   } else {
     specificSliders = adamSpecificSliders;
   }
-  // Reverse order: specific sliders first, then common sliders at bottom
+  // For gradient/adam: learning rate, weight penalty, speed, common, then other specific sliders
   return [
-    ...specificSliders,
+    specificSliders[0], // Learning Rate
     weightPenaltySliderConfig,
     speedSliderConfig.value,
     ...commonSliderConfigs.slice().reverse(),
+    ...specificSliders.slice(1), // Remaining specific sliders (Beta1, Beta2, Epsilon for Adam)
   ];
 });
 
@@ -1184,8 +1192,8 @@ watch(numChildren, (): void => {
     <div
       class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
     >
-      <!-- Sliders -->
-      <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
+      <!-- Sliders - Mobile (reversed order) -->
+      <div class="mb-2 md:mb-3 flex md:hidden flex-col gap-1.5 md:gap-2 order-1 md:order-2">
         <Slider
           v-for="(config, index) in sliderConfigs"
           :key="index"
@@ -1202,8 +1210,26 @@ watch(numChildren, (): void => {
         />
       </div>
 
+      <!-- Sliders - Desktop (normal order) -->
+      <div class="mb-2 md:mb-3 hidden md:flex flex-col gap-1.5 md:gap-2 order-1 md:order-2">
+        <Slider
+          v-for="(config, index) in sliderConfigs.slice().reverse()"
+          :key="index"
+          :label="config.label"
+          v-model="config.model.value"
+          :min="config.min"
+          :max="config.max"
+          :step="config.step"
+          :decimals="config.decimals"
+          :logarithmic="config.logarithmic"
+          :logMidpoint="config.logMidpoint"
+          :useScientificNotation="config.useScientificNotation"
+          :thumbColor="getDotColor()"
+        />
+      </div>
+
       <!-- All Buttons -->
-      <div class="mb-2 md:mb-3 flex items-stretch gap-2">
+      <div class="mb-2 md:mb-3 flex items-stretch gap-2 order-2 md:order-1">
         <button
           @click="openInfoModal"
           class="w-8 h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all hover:bg-gray-500 active:translate-y-px shrink-0 self-center"
@@ -1263,7 +1289,7 @@ watch(numChildren, (): void => {
 
       <!-- Table -->
       <div
-        class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0"
+        class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0 order-3"
       >
         <div
           class="w-8 text-center text-[10px] flex items-center justify-center"
@@ -1295,7 +1321,7 @@ watch(numChildren, (): void => {
         </div>
       </div>
 
-      <div class="flex-1 overflow-hidden hidden md:flex flex-col">
+      <div class="flex-1 overflow-hidden hidden md:flex flex-col order-4">
         <div
           v-for="(curve, index) in sortedCurves"
           :key="curve.id"
@@ -1331,7 +1357,7 @@ watch(numChildren, (): void => {
       ref="canvasRef"
       :width="CANVAS_SIZE * CANVAS_SCALE"
       :height="CANVAS_SIZE * CANVAS_SCALE"
-      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain md:max-w-[66vw] md:h-full md:flex-initial"
+      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
       :style="{
         cursor:
           hoveredPointIndex !== null || draggingPointIndex !== null
