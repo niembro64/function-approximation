@@ -32,7 +32,8 @@ interface CoordSystemCoords {
 // ============================================================
 
 const TAILWIND_RED_500: string = '#fb2c36';
-const TAILWIND_GREEN_500: string = '#00c950';
+const TAILWIND_GREEN_600: string = '#16a34a';
+const TAILWIND_BLUE_500: string = '#3b82f6';
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -79,14 +80,18 @@ const DEFAULT_ITERATIONS_PER_SEC_MOBILE: number = 16;
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
-// Dot/Point Colors (for canvas points and slider thumbs)
-const DOT_COLOR: string = TAILWIND_GREEN_500;
+// Dot/Point Colors (for canvas points and slider thumbs) - dynamic based on method
+const getDotColor = (): string => {
+  return solutionMethod.value === 'genetic' ? TAILWIND_GREEN_600 : TAILWIND_BLUE_500;
+};
 const DOT_BORDER_COLOR: string = '#ffffff';
 const DOT_BORDER_WIDTH: number = 3;
 
-// Curve Drawing Styles
+// Curve Drawing Styles - dynamic based on method
 const BEST_CURVE_LINE_WIDTH: number = 5;
-const BEST_CURVE_COLOR: string = TAILWIND_GREEN_500;
+const getBestCurveColor = (): string => {
+  return solutionMethod.value === 'genetic' ? TAILWIND_GREEN_600 : TAILWIND_BLUE_500;
+};
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
 const OTHER_CURVE_OPACITY: number = 0.5;
@@ -138,7 +143,6 @@ const AXIS_LINE_WIDTH: number = 2;
 
 // Canvas Colors
 const COLOR_ERROR_BARS: string = TAILWIND_RED_500;
-const COLOR_POINTS: string = DOT_COLOR;
 const COLOR_POINT_BORDER: string = DOT_BORDER_COLOR;
 const COLOR_BACKGROUND: string = '#1a1a1a'; // Dark gray
 const COLOR_GRID: string = '#333'; // Dark gray
@@ -690,7 +694,7 @@ const toCoordSystemCoords = (cx: number, cy: number): CoordSystemCoords => {
 
 // Get color for curve based on rank
 const getCurveColor = (index: number): string => {
-  return index === 0 ? BEST_CURVE_COLOR : OTHER_CURVE_COLOR;
+  return index === 0 ? getBestCurveColor() : OTHER_CURVE_COLOR;
 };
 
 // Find point at given canvas position (returns index or null)
@@ -933,7 +937,7 @@ const draw = (): void => {
   points.value.forEach((point: Point): void => {
     const coords: CanvasCoords = toCanvasCoords(point.x, point.y);
 
-    ctx.fillStyle = COLOR_POINTS;
+    ctx.fillStyle = getDotColor();
     ctx.beginPath();
     ctx.arc(coords.cx, coords.cy, POINT_RADIUS, 0, Math.PI * 2);
     ctx.fill();
@@ -1033,7 +1037,7 @@ watch(numChildren, (): void => {
       <div class="m-0 mb-3 md:mb-4 flex items-center gap-3">
         <button
           @click="openInfoModal"
-          class="w-8 h-8 flex items-center justify-center bg-primary text-white border-none rounded-full cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px shrink-0"
+          class="w-8 h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all hover:bg-gray-500 active:translate-y-px shrink-0"
           aria-label="Information"
           title="Learn more about this project"
         >
@@ -1041,7 +1045,10 @@ watch(numChildren, (): void => {
         </button>
         <button
           @click="toggleSolutionMethod"
-          class="flex-1 p-2 text-sm md:text-base font-bold bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px text-left"
+          class="flex-1 p-2 text-sm md:text-base font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-left"
+          :style="{ backgroundColor: getDotColor() }"
+          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
+          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
           :title="`Switch to ${solutionMethod === 'genetic' ? 'Gradient Descent' : 'Genetic Algorithm'}`"
         >
           {{ solutionMethodTitle }}
@@ -1062,6 +1069,7 @@ watch(numChildren, (): void => {
           :logarithmic="config.logarithmic"
           :logMidpoint="config.logMidpoint"
           :useScientificNotation="config.useScientificNotation"
+          :thumbColor="getDotColor()"
         />
       </div>
 
@@ -1070,20 +1078,29 @@ watch(numChildren, (): void => {
         <button
           v-if="solutionMethod === 'genetic'"
           @click="generateCurves"
-          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          :style="{ backgroundColor: getDotColor(), '&:hover': { filter: 'brightness(0.9)' } }"
+          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
+          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
           New Curves
         </button>
         <button
           v-else
           @click="generateSingleCurve"
-          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          :style="{ backgroundColor: getDotColor() }"
+          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
+          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
           New Curve
         </button>
         <button
           @click="generateRandomPoints"
-          class="flex-1 p-2 text-sm md:text-base bg-primary text-white border-none rounded cursor-pointer transition-all hover:bg-primary-hover active:translate-y-px"
+          class="flex-1 p-2 text-sm md:text-base text-white border-none rounded cursor-pointer transition-all active:translate-y-px"
+          :style="{ backgroundColor: getDotColor() }"
+          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
+          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
         >
           New Points
         </button>

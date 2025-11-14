@@ -12,6 +12,7 @@ interface Props {
   logarithmic?: boolean;
   logMidpoint?: number; // The actual value at the slider's midpoint
   useScientificNotation?: boolean;
+  thumbColor?: string; // Custom thumb color
 }
 
 const props = defineProps<Props>();
@@ -144,8 +145,8 @@ const displayValue = (): string => {
   appearance: none;
   width: 22px;
   height: 22px;
-  background: #00c950; /* TAILWIND_GREEN_500 / DOT_COLOR */
-  border: 3px solid #ffffff; /* DOT_BORDER_COLOR with DOT_BORDER_WIDTH */
+  background: v-bind('thumbColor || "#00c950"');
+  border: 3px solid #ffffff;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
@@ -153,7 +154,7 @@ const displayValue = (): string => {
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
-  background: #00b347; /* Darker green for hover */
+  filter: brightness(0.9);
   transform: scale(1.1);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
@@ -161,8 +162,8 @@ const displayValue = (): string => {
 .custom-slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
-  background: #00c950; /* TAILWIND_GREEN_500 / DOT_COLOR */
-  border: 3px solid #ffffff; /* DOT_BORDER_COLOR with DOT_BORDER_WIDTH */
+  background: v-bind('thumbColor || "#00c950"');
+  border: 3px solid #ffffff;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
@@ -170,7 +171,7 @@ const displayValue = (): string => {
 }
 
 .custom-slider::-moz-range-thumb:hover {
-  background: #00b347; /* Darker green for hover */
+  filter: brightness(0.9);
   transform: scale(1.1);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
