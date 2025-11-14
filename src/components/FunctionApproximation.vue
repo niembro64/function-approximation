@@ -524,7 +524,7 @@ const getWeightProportionalScale = (weight: number): number => {
 const gradientDescentStep = (): void => {
   if (curves.value.length === 0) return;
 
-  const curve: Curve = curves.value[0];
+  const curve: Curve = curves.value[0]!;
   const gradients: number[] = new Array(curve.weights.length).fill(0);
 
   // Calculate gradients for each weight
@@ -559,7 +559,7 @@ const gradientDescentStep = (): void => {
 const adamStep = (): void => {
   if (curves.value.length === 0) return;
 
-  const curve: Curve = curves.value[0];
+  const curve: Curve = curves.value[0]!;
 
   // Initialize Adam state if needed
   if (adamM.value.length !== curve.weights.length) {
