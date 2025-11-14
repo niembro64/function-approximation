@@ -27,6 +27,18 @@ interface CoordSystemCoords {
   y: number;
 }
 
+interface SliderConfig {
+  label: string;
+  model: Ref<number>;
+  min: number;
+  max: number;
+  step?: number;
+  decimals?: number;
+  logarithmic?: boolean;
+  logMidpoint?: number;
+  useScientificNotation?: boolean;
+}
+
 // ============================================================
 // Configuration
 // ============================================================
@@ -72,6 +84,11 @@ const MIN_LEARNING_RATE: number = 0.0001;
 const MAX_LEARNING_RATE: number = 1;
 const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.1;
 const DEFAULT_LEARNING_RATE_MOBILE: number = 0.1;
+
+const MIN_STOCHASTICITY: number = 0;
+const MAX_STOCHASTICITY: number = 3;
+const DEFAULT_STOCHASTICITY_DESKTOP: number = 0;
+const DEFAULT_STOCHASTICITY_MOBILE: number = 0;
 
 // Adam Optimizer Parameters
 const MIN_ADAM_LEARNING_RATE: number = 0.0001;
@@ -202,8 +219,13 @@ const weightPenalty = ref<number>(
 const learningRate = ref<number>(
   isMobile() ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP
 );
+const stochasticity = ref<number>(
+  isMobile() ? DEFAULT_STOCHASTICITY_MOBILE : DEFAULT_STOCHASTICITY_DESKTOP
+);
 const adamLearningRate = ref<number>(
-  isMobile() ? DEFAULT_ADAM_LEARNING_RATE_MOBILE : DEFAULT_ADAM_LEARNING_RATE_DESKTOP
+  isMobile()
+    ? DEFAULT_ADAM_LEARNING_RATE_MOBILE
+    : DEFAULT_ADAM_LEARNING_RATE_DESKTOP
 );
 const adamBeta1 = ref<number>(
   isMobile() ? DEFAULT_ADAM_BETA1_MOBILE : DEFAULT_ADAM_BETA1_DESKTOP
@@ -219,12 +241,12 @@ let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
 
 // Adam optimizer state (moment estimates)
-const adamM = ref<number[]>([]);  // First moment (mean)
-const adamV = ref<number[]>([]);  // Second moment (variance)
-const adamT = ref<number>(0);     // Time step
+const adamM = ref<number[]>([]); // First moment (mean)
+const adamV = ref<number[]>([]); // Second moment (variance)
+const adamT = ref<number>(0); // Time step
 
 // Common slider configurations for both methods
-const commonSliderConfigs = [
+const commonSliderConfigs: SliderConfig[] = [
   {
     label: '# Points',
     model: numPoints,
@@ -240,7 +262,7 @@ const commonSliderConfigs = [
 ];
 
 // Speed slider - different models for each method
-const speedSliderConfig = computed(() => {
+const speedSliderConfig = computed((): SliderConfig => {
   return {
     label: 'Speed',
     model: generationsPerSec,
@@ -250,7 +272,7 @@ const speedSliderConfig = computed(() => {
 });
 
 // Weight Penalty slider - common configuration
-const weightPenaltySliderConfig = {
+const weightPenaltySliderConfig: SliderConfig = {
   label: '↑ Weight Penalty',
   model: weightPenalty,
   min: MIN_WEIGHT_PENALTY,
@@ -263,7 +285,7 @@ const weightPenaltySliderConfig = {
 };
 
 // Genetic Algorithm specific sliders
-const geneticSpecificSliders = [
+const geneticSpecificSliders: SliderConfig[] = [
   {
     label: '# Children',
     model: numChildren,
@@ -282,7 +304,7 @@ const geneticSpecificSliders = [
 ];
 
 // Gradient Descent specific sliders
-const gradientSpecificSliders = [
+const gradientSpecificSliders: SliderConfig[] = [
   {
     label: 'Learning Rate',
     model: learningRate,
@@ -294,10 +316,18 @@ const gradientSpecificSliders = [
     logMidpoint: 0.01,
     useScientificNotation: true,
   },
+  {
+    label: 'Stochasticity',
+    model: stochasticity,
+    min: MIN_STOCHASTICITY,
+    max: MAX_STOCHASTICITY,
+    step: 0.01,
+    decimals: 2,
+  },
 ];
 
 // Adam Optimizer specific sliders
-const adamSpecificSliders = [
+const adamSpecificSliders: SliderConfig[] = [
   {
     label: 'Learning Rate',
     model: adamLearningRate,
@@ -341,7 +371,7 @@ const adamSpecificSliders = [
 ];
 
 // Computed slider configs based on solution method
-const sliderConfigs = computed(() => {
+const sliderConfigs = computed((): SliderConfig[] => {
   let specificSliders;
   if (solutionMethod.value === 'genetic') {
     specificSliders = geneticSpecificSliders;
@@ -359,7 +389,7 @@ const sliderConfigs = computed(() => {
   }
   // For gradient/adam: learning rate, weight penalty, speed, common, then other specific sliders
   return [
-    specificSliders[0], // Learning Rate
+    specificSliders[0]!, // Learning Rate
     weightPenaltySliderConfig,
     speedSliderConfig.value,
     ...commonSliderConfigs.slice().reverse(),
@@ -530,27 +560,44 @@ const getWeightProportionalScale = (weight: number): number => {
 
 // Perform one gradient descent step
 const gradientDescentStep = (): void => {
+  const gradients: number[] = [];
+
   if (curves.value.length === 0) return;
 
   const curve: Curve = curves.value[0]!;
-  const gradients: number[] = new Array(curve.weights.length).fill(0);
+
+  for (let i = 0; i < curve.weights.length; i++) {
+    gradients.push(0);
+  }
 
   // Calculate gradients for each weight
-  points.value.forEach((point: Point): void => {
+  for (const point of points.value) {
     const predicted: number = evaluateCurve(curve, point.x);
     const error: number = predicted - point.y;
 
     // Gradient for each weight: d(MSE)/d(w_i) = 2 * error * x^i / n
-    for (let i: number = 0; i < curve.weights.length; i++) {
+    for (let i: number = 0; i < gradients.length; i++) {
       gradients[i] += (2 * error * Math.pow(point.x, i)) / points.value.length;
     }
-  });
+  }
 
   // Add L2 regularization gradient: d(penalty)/d(w_i) = 2 * lambda * w_i
   // where lambda is the weightPenalty value
   if (weightPenalty.value > 0) {
     for (let i: number = 0; i < curve.weights.length; i++) {
       gradients[i] += 2 * weightPenalty.value * curve.weights[i];
+    }
+  }
+
+  // Add stochastic noise to gradients based on stochasticity value
+  if (stochasticity.value > 0) {
+    for (let i: number = 0; i < gradients.length; i++) {
+      // Add Gaussian noise proportional to stochasticity
+      // The noise magnitude scales with the gradient magnitude
+      const gradientMagnitude: number = Math.abs(gradients[i]);
+      const noiseMagnitude: number = gradientMagnitude * stochasticity.value;
+      const noise: number = randomNormal(0, noiseMagnitude);
+      gradients[i] += noise;
     }
   }
 
@@ -602,19 +649,27 @@ const adamStep = (): void => {
   // Update weights using Adam optimizer
   curve.weights = curve.weights.map((weight: number, i: number): number => {
     // Update biased first moment estimate
-    adamM.value[i] = adamBeta1.value * adamM.value[i] + (1 - adamBeta1.value) * gradients[i];
+    adamM.value[i] =
+      adamBeta1.value * adamM.value[i] + (1 - adamBeta1.value) * gradients[i];
 
     // Update biased second moment estimate
-    adamV.value[i] = adamBeta2.value * adamV.value[i] + (1 - adamBeta2.value) * gradients[i] * gradients[i];
+    adamV.value[i] =
+      adamBeta2.value * adamV.value[i] +
+      (1 - adamBeta2.value) * gradients[i] * gradients[i];
 
     // Compute bias-corrected first moment estimate
-    const mHat: number = adamM.value[i] / (1 - Math.pow(adamBeta1.value, adamT.value));
+    const mHat: number =
+      adamM.value[i] / (1 - Math.pow(adamBeta1.value, adamT.value));
 
     // Compute bias-corrected second moment estimate
-    const vHat: number = adamV.value[i] / (1 - Math.pow(adamBeta2.value, adamT.value));
+    const vHat: number =
+      adamV.value[i] / (1 - Math.pow(adamBeta2.value, adamT.value));
 
     // Update weight
-    return weight - adamLearningRate.value * mHat / (Math.sqrt(vHat) + adamEpsilon.value);
+    return (
+      weight -
+      (adamLearningRate.value * mHat) / (Math.sqrt(vHat) + adamEpsilon.value)
+    );
   });
 
   updateFitness();
@@ -803,7 +858,6 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
 
 // Alias for the shared utility function
 const formatScientific = generateScientificNotation;
-
 
 // Generate upper bound for summation notation
 const upperBound = computed((): string => {
@@ -1132,6 +1186,16 @@ const draw = (): void => {
   );
   ctx.fillText('0', PADDING - 15, center + 5);
   ctx.fillText(COORD_MAX.toString(), PADDING - 15, PADDING + 5);
+
+  // Display fitness in top-right corner
+  if (bestCurve !== null) {
+    const fitnessText: string = `Fitness: ${formatScientific(bestCurve.fitness, 2)}`;
+    ctx.font = '14px monospace';
+    ctx.fillStyle = getDotColor();
+    ctx.textAlign = 'right';
+    ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING + 15);
+    ctx.textAlign = 'left'; // Reset to default
+  }
 };
 
 // Handle window resize
@@ -1193,10 +1257,12 @@ watch(numChildren, (): void => {
       class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
     >
       <!-- Sliders - Mobile (reversed order) -->
-      <div class="mb-2 md:mb-3 flex md:hidden flex-col gap-1.5 md:gap-2 order-1 md:order-2">
+      <div
+        class="mb-2 md:mb-3 flex md:hidden flex-col gap-1.5 md:gap-2 order-1 md:order-2"
+      >
         <Slider
           v-for="(config, index) in sliderConfigs"
-          :key="index"
+          :key="config.label"
           :label="config.label"
           v-model="config.model.value"
           :min="config.min"
@@ -1211,10 +1277,12 @@ watch(numChildren, (): void => {
       </div>
 
       <!-- Sliders - Desktop (normal order) -->
-      <div class="mb-2 md:mb-3 hidden md:flex flex-col gap-1.5 md:gap-2 order-1 md:order-2">
+      <div
+        class="mb-2 md:mb-3 hidden md:flex flex-col gap-1.5 md:gap-2 order-1 md:order-2"
+      >
         <Slider
           v-for="(config, index) in sliderConfigs.slice().reverse()"
-          :key="index"
+          :key="config.label"
           :label="config.label"
           v-model="config.model.value"
           :min="config.min"
@@ -1242,9 +1310,13 @@ watch(numChildren, (): void => {
           @click="toggleSolutionMethod"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-center flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor() }"
-          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
-          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
-          :title="`Switch to ${solutionMethod === 'genetic' ? 'Gradient Descent' : 'Genetic Algorithm'}`"
+          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+          :title="`Switch to ${
+            solutionMethod === 'genetic'
+              ? 'Gradient Descent'
+              : 'Genetic Algorithm'
+          }`"
         >
           <span v-if="solutionMethod === 'genetic'">Genetic</span>
           <span v-else-if="solutionMethod === 'gradient'">Gradient</span>
@@ -1257,9 +1329,9 @@ watch(numChildren, (): void => {
           v-if="solutionMethod === 'genetic'"
           @click="generateCurves"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getDotColor(), '&:hover': { filter: 'brightness(0.9)' } }"
-          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
-          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
+          :style="{ backgroundColor: getDotColor() }"
+          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
         >
           <span>New</span>
           <span>Curves</span>
@@ -1269,8 +1341,8 @@ watch(numChildren, (): void => {
           @click="generateSingleCurve"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor() }"
-          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
-          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
+          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
         >
           <span>New</span>
           <span>Curve</span>
@@ -1279,8 +1351,8 @@ watch(numChildren, (): void => {
           @click="generateRandomPoints"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
           :style="{ backgroundColor: getDotColor() }"
-          @mouseover="$event.currentTarget.style.filter = 'brightness(0.9)'"
-          @mouseout="$event.currentTarget.style.filter = 'brightness(1)'"
+          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
         >
           <span>New</span>
           <span>Points</span>
@@ -1291,17 +1363,14 @@ watch(numChildren, (): void => {
       <div
         class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0 order-3"
       >
-        <div
-          class="w-8 text-center text-[10px] flex items-center justify-center"
-        >
-          #
-        </div>
         <div class="flex-1 flex">
           <div
             v-for="wIndex in numWeights"
             :key="wIndex"
             class="flex-1 text-center flex items-center justify-center"
-            :class="numWeights > 6 && numWeights <= 20 ? 'text-[10px]' : 'text-sm'"
+            :class="
+              numWeights > 6 && numWeights <= 20 ? 'text-[10px]' : 'text-sm'
+            "
           >
             <template v-if="numWeights > 20">
               <!-- No text for more than 20 columns -->
@@ -1312,7 +1381,9 @@ watch(numChildren, (): void => {
             <template v-else>
               <template v-if="wIndex === 1">1</template>
               <template v-else-if="wIndex === 2">x</template>
-              <template v-else>x<sup>{{ wIndex - 1 }}</sup></template>
+              <template v-else
+                >x<sup>{{ wIndex - 1 }}</sup></template
+              >
             </template>
           </div>
         </div>
@@ -1332,9 +1403,6 @@ watch(numChildren, (): void => {
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
         >
-          <div class="w-8 flex items-center justify-center text-ui-text-muted">
-            {{ solutionMethod === 'gradient' ? '' : index + 1 }}
-          </div>
           <div class="flex-1 flex">
             <WeightCell
               v-for="(weight, wIndex) in curve.weights"
@@ -1345,9 +1413,9 @@ watch(numChildren, (): void => {
             />
           </div>
           <div
-            class="w-20 flex items-center justify-center font-bold text-ui-text text-[11px]"
+            class="w-20 flex items-center justify-center font-bold text-ui-text text-xs md:text-sm font-mono"
           >
-            {{ formatScientific(curve.fitness) }}
+            {{ formatScientific(curve.fitness, 2) }}
           </div>
         </div>
       </div>
