@@ -186,8 +186,8 @@ let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
 
-// Slider configurations for Genetic Algorithm
-const geneticSliderConfigs = [
+// Common slider configurations for both methods
+const commonSliderConfigs = [
   {
     label: '# Points',
     model: numPoints,
@@ -200,17 +200,45 @@ const geneticSliderConfigs = [
     min: MIN_WEIGHTS,
     max: MAX_WEIGHTS,
   },
+];
+
+// Speed slider - different models for each method
+const speedSliderConfig = computed(() => {
+  return solutionMethod.value === 'genetic'
+    ? {
+        label: 'Speed',
+        model: generationsPerSec,
+        min: MIN_GENERATIONS_PER_SEC,
+        max: MAX_GENERATIONS_PER_SEC,
+      }
+    : {
+        label: 'Speed',
+        model: iterationsPerSec,
+        min: MIN_ITERATIONS_PER_SEC,
+        max: MAX_ITERATIONS_PER_SEC,
+      };
+});
+
+// Weight Penalty slider - common configuration
+const weightPenaltySliderConfig = {
+  label: '↑ Weight Penalty',
+  model: weightPenalty,
+  min: MIN_WEIGHT_PENALTY,
+  max: MAX_WEIGHT_PENALTY,
+  step: 0.01,
+  decimals: 2,
+  logarithmic: true,
+  logMidpoint: 0.01,
+  useScientificNotation: true,
+};
+
+// Genetic Algorithm specific sliders
+const geneticSpecificSliders = [
   {
     label: '# Children',
     model: numChildren,
     min: MIN_CHILDREN,
     max: MAX_CHILDREN,
-  },
-  {
-    label: 'Speed',
-    model: generationsPerSec,
-    min: MIN_GENERATIONS_PER_SEC,
-    max: MAX_GENERATIONS_PER_SEC,
   },
   {
     label: 'Mutation Variance',
@@ -221,33 +249,10 @@ const geneticSliderConfigs = [
     decimals: 2,
     useScientificNotation: true,
   },
-  {
-    label: '↑ Weight Penalty',
-    model: weightPenalty,
-    min: MIN_WEIGHT_PENALTY,
-    max: MAX_WEIGHT_PENALTY,
-    step: 0.01,
-    decimals: 2,
-    logarithmic: true,
-    logMidpoint: 0.01,
-    useScientificNotation: true,
-  },
 ];
 
-// Slider configurations for Gradient Descent
-const gradientSliderConfigs = [
-  {
-    label: '# Points',
-    model: numPoints,
-    min: MIN_POINTS,
-    max: MAX_POINTS,
-  },
-  {
-    label: '# Weights',
-    model: numWeights,
-    min: MIN_WEIGHTS,
-    max: MAX_WEIGHTS,
-  },
+// Gradient Descent specific sliders
+const gradientSpecificSliders = [
   {
     label: 'Learning Rate',
     model: learningRate,
@@ -259,19 +264,19 @@ const gradientSliderConfigs = [
     logMidpoint: 0.01,
     useScientificNotation: true,
   },
-  {
-    label: 'Speed',
-    model: iterationsPerSec,
-    min: MIN_ITERATIONS_PER_SEC,
-    max: MAX_ITERATIONS_PER_SEC,
-  },
 ];
 
 // Computed slider configs based on solution method
 const sliderConfigs = computed(() => {
-  return solutionMethod.value === 'genetic'
-    ? geneticSliderConfigs
-    : gradientSliderConfigs;
+  const specificSliders = solutionMethod.value === 'genetic'
+    ? geneticSpecificSliders
+    : gradientSpecificSliders;
+  return [
+    ...commonSliderConfigs,
+    speedSliderConfig.value,
+    weightPenaltySliderConfig,
+    ...specificSliders,
+  ];
 });
 
 // Drag state
@@ -438,6 +443,14 @@ const gradientDescentStep = (): void => {
       gradients[i] += (2 * error * Math.pow(point.x, i)) / points.value.length;
     }
   });
+
+  // Add L2 regularization gradient: d(penalty)/d(w_i) = 2 * lambda * w_i
+  // where lambda is the weightPenalty value
+  if (weightPenalty.value > 0) {
+    for (let i: number = 0; i < curve.weights.length; i++) {
+      gradients[i] += 2 * weightPenalty.value * curve.weights[i];
+    }
+  }
 
   // Update weights using gradient descent
   curve.weights = curve.weights.map(
