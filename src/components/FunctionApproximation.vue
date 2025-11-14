@@ -68,8 +68,8 @@ const DEFAULT_WEIGHT_PENALTY_MOBILE: number = 0;
 // Gradient Descent Parameters
 const MIN_LEARNING_RATE: number = 0.0001;
 const MAX_LEARNING_RATE: number = 1;
-const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.01;
-const DEFAULT_LEARNING_RATE_MOBILE: number = 0.01;
+const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.1;
+const DEFAULT_LEARNING_RATE_MOBILE: number = 0.1;
 
 const MIN_ITERATIONS_PER_SEC: number = 1;
 const MAX_ITERATIONS_PER_SEC: number = 256;
