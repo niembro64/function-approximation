@@ -323,6 +323,7 @@ const gradientSpecificSliders: SliderConfig[] = [
     max: MAX_STOCHASTICITY,
     step: 0.01,
     decimals: 2,
+    useScientificNotation: true,
   },
 ];
 
@@ -372,29 +373,33 @@ const adamSpecificSliders: SliderConfig[] = [
 
 // Computed slider configs based on solution method
 const sliderConfigs = computed((): SliderConfig[] => {
-  let specificSliders;
   if (solutionMethod.value === 'genetic') {
-    specificSliders = geneticSpecificSliders;
-    // For genetic: specific sliders, then weight penalty, speed, common
+    // Genetic: specific sliders, then common sliders at bottom
     return [
-      ...specificSliders,
-      weightPenaltySliderConfig,
+      ...geneticSpecificSliders,
+      ...commonSliderConfigs,
       speedSliderConfig.value,
-      ...commonSliderConfigs.slice().reverse(),
+      weightPenaltySliderConfig,
     ];
   } else if (solutionMethod.value === 'gradient') {
-    specificSliders = gradientSpecificSliders;
+    // Gradient: other specific sliders, learning rate, then common sliders at bottom
+    return [
+      ...gradientSpecificSliders.slice(1), // Stochasticity
+      gradientSpecificSliders[0], // Learning Rate (just above # Points)
+      ...commonSliderConfigs,
+      speedSliderConfig.value,
+      weightPenaltySliderConfig,
+    ];
   } else {
-    specificSliders = adamSpecificSliders;
+    // Adam: other specific sliders, learning rate, then common sliders at bottom
+    return [
+      ...adamSpecificSliders.slice(1), // Beta1, Beta2, Epsilon
+      adamSpecificSliders[0], // Learning Rate (just above # Points)
+      ...commonSliderConfigs,
+      speedSliderConfig.value,
+      weightPenaltySliderConfig,
+    ];
   }
-  // For gradient/adam: learning rate, weight penalty, speed, common, then other specific sliders
-  return [
-    specificSliders[0]!, // Learning Rate
-    weightPenaltySliderConfig,
-    speedSliderConfig.value,
-    ...commonSliderConfigs.slice().reverse(),
-    ...specificSliders.slice(1), // Remaining specific sliders (Beta1, Beta2, Epsilon for Adam)
-  ];
 });
 
 // Drag state

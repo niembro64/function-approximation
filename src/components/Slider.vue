@@ -7,12 +7,12 @@ interface Props {
   modelValue: number;
   min: number;
   max: number;
-  step?: number;
-  decimals?: number;
-  logarithmic?: boolean;
-  logMidpoint?: number; // The actual value at the slider's midpoint
-  useScientificNotation?: boolean;
-  thumbColor?: string; // Custom thumb color
+  step?: number | null;
+  decimals?: number | null;
+  logarithmic?: boolean | null;
+  logMidpoint?: number | null; // The actual value at the slider's midpoint
+  useScientificNotation?: boolean | null;
+  thumbColor?: string | null; // Custom thumb color
 }
 
 const props = defineProps<Props>();
@@ -99,7 +99,7 @@ const displayValue = (): string => {
   if (props.useScientificNotation) {
     return generateScientificNotation(props.modelValue, props.decimals ?? 2);
   }
-  if (props.decimals !== undefined) {
+  if (props.decimals !== null && props.decimals !== undefined) {
     return props.modelValue.toFixed(props.decimals);
   }
   return props.modelValue.toString();

@@ -96,8 +96,9 @@ const handleBackdropClick = (event: MouseEvent): void => {
                   <ul class="list-disc list-inside space-y-1 text-sm">
                     <li><strong>Gradient:</strong> Computes partial derivatives of MSE with respect to each weight</li>
                     <li><strong>Update:</strong> w ← w - α∇E (weight minus learning rate times gradient)</li>
+                    <li><strong>Stochasticity:</strong> Adds Gaussian noise to gradients for exploration and escaping local minima</li>
                     <li><strong>Regularization:</strong> L2 penalty prevents overfitting by penalizing large weights</li>
-                    <li><strong>Parameters:</strong> Learning Rate (α)</li>
+                    <li><strong>Parameters:</strong> Learning Rate (α), Stochasticity</li>
                   </ul>
                 </div>
 
@@ -141,6 +142,7 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 <h4 class="font-bold text-blue-500 mb-1">Gradient Descent</h4>
                 <ul class="list-disc list-inside space-y-1 text-sm">
                   <li><strong>Learning Rate:</strong> Step size for weight updates</li>
+                  <li><strong>Stochasticity:</strong> Noise level added to gradients (0 = deterministic, higher = more random exploration)</li>
                 </ul>
               </div>
 
