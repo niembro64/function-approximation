@@ -120,7 +120,7 @@ const displayValue = (): string => {
         class="custom-slider w-full"
       />
     </div>
-    <span class="text-ui-text text-xs md:text-sm font-mono w-16 md:w-20 text-right shrink-0">{{ displayValue() }}</span>
+    <span class="text-ui-text text-xs md:text-sm font-mono w-20 md:w-24 text-right shrink-0">{{ displayValue() }}</span>
   </div>
 </template>
 
