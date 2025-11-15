@@ -5,277 +5,178 @@ import WeightCell from './WeightCell.vue';
 import InfoModal from './InfoModal.vue';
 import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
 import { generateScientificNotation } from '../utils/formatters';
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface Curve {
-  id: number;
-  weights: number[]; // Dynamic array of weights [w0, w1, w2, ...]
-  fitness: number;
-}
-
-interface CanvasCoords {
-  cx: number;
-  cy: number;
-}
-
-interface CoordSystemCoords {
-  x: number;
-  y: number;
-}
-
-interface SliderConfig {
-  label: string;
-  model: Ref<number>;
-  min: number;
-  max: number;
-  step?: number;
-  decimals?: number;
-  logarithmic?: boolean;
-  logMidpoint?: number;
-  useScientificNotation?: boolean;
-}
+import type {
+  Point,
+  Curve,
+  CanvasCoords,
+  CoordSystemCoords,
+  SliderConfig,
+  Particle,
+  MutationDistribution,
+  SolutionMethod,
+} from '../types';
+import {
+  TAILWIND_PURPLE_500,
+  TAILWIND_VIOLET_500,
+  TAILWIND_INDIGO_500,
+  TAILWIND_BLUE_500,
+  TAILWIND_CYAN_500,
+  TAILWIND_GREEN_600,
+  TAILWIND_LIME_700,
+  TAILWIND_EMERALD_600,
+  TAILWIND_YELLOW_600,
+  TAILWIND_PINK_500,
+  TAILWIND_FUCSHIA_500,
+  TAILWIND_RED_500,
+  POINTS_DARK_GRAY,
+  POINTS_GRAY,
+  ALGO_GENETIC_ALGORITHM,
+  ALGO_PARTICLE_SWARM,
+  ALGO_GRADIENT_DESCENT,
+  ALGO_MOMENTUM_BASED_GD,
+  ALGO_ADAM_OPTIMIZER,
+  ALGO_SIMULATED_ANNEALING,
+  ALGO_POLYNOMIAL_SOLVER,
+  ALGO_RANDOM_SEARCH,
+  MIN_POINTS,
+  MAX_POINTS,
+  DEFAULT_NUM_POINTS_DESKTOP,
+  DEFAULT_NUM_POINTS_MOBILE,
+  MIN_WEIGHTS,
+  MAX_WEIGHTS,
+  DEFAULT_NUM_WEIGHTS_DESKTOP,
+  DEFAULT_NUM_WEIGHTS_MOBILE,
+  MIN_CHILDREN,
+  MAX_CHILDREN,
+  DEFAULT_NUM_CHILDREN_DESKTOP,
+  DEFAULT_NUM_CHILDREN_MOBILE,
+  MIN_GENERATIONS_PER_SEC,
+  MAX_GENERATIONS_PER_SEC,
+  DEFAULT_GENERATIONS_PER_SEC_DESKTOP,
+  DEFAULT_GENERATIONS_PER_SEC_MOBILE,
+  MIN_MUTATION_VARIANCE,
+  MAX_MUTATION_VARIANCE,
+  DEFAULT_MUTATION_VARIANCE_DESKTOP,
+  DEFAULT_MUTATION_VARIANCE_MOBILE,
+  MIN_WEIGHT_PENALTY,
+  MAX_WEIGHT_PENALTY,
+  DEFAULT_WEIGHT_PENALTY_DESKTOP,
+  DEFAULT_WEIGHT_PENALTY_MOBILE,
+  MIN_LEARNING_RATE,
+  MAX_LEARNING_RATE,
+  DEFAULT_LEARNING_RATE_DESKTOP,
+  DEFAULT_LEARNING_RATE_MOBILE,
+  MIN_STOCHASTICITY,
+  MAX_STOCHASTICITY,
+  DEFAULT_STOCHASTICITY_DESKTOP,
+  DEFAULT_STOCHASTICITY_MOBILE,
+  MIN_ADAM_LEARNING_RATE,
+  MAX_ADAM_LEARNING_RATE,
+  DEFAULT_ADAM_LEARNING_RATE_DESKTOP,
+  DEFAULT_ADAM_LEARNING_RATE_MOBILE,
+  MIN_ADAM_BETA1,
+  MAX_ADAM_BETA1,
+  DEFAULT_ADAM_BETA1_DESKTOP,
+  DEFAULT_ADAM_BETA1_MOBILE,
+  MIN_ADAM_BETA2,
+  MAX_ADAM_BETA2,
+  DEFAULT_ADAM_BETA2_DESKTOP,
+  DEFAULT_ADAM_BETA2_MOBILE,
+  MIN_ADAM_EPSILON,
+  MAX_ADAM_EPSILON,
+  DEFAULT_ADAM_EPSILON_DESKTOP,
+  DEFAULT_ADAM_EPSILON_MOBILE,
+  MIN_SA_INITIAL_TEMP,
+  MAX_SA_INITIAL_TEMP,
+  DEFAULT_SA_INITIAL_TEMP_DESKTOP,
+  DEFAULT_SA_INITIAL_TEMP_MOBILE,
+  MIN_SA_COOLING_RATE,
+  MAX_SA_COOLING_RATE,
+  DEFAULT_SA_COOLING_RATE_DESKTOP,
+  DEFAULT_SA_COOLING_RATE_MOBILE,
+  MIN_SA_ITERATIONS,
+  MAX_SA_ITERATIONS,
+  DEFAULT_SA_ITERATIONS_DESKTOP,
+  DEFAULT_SA_ITERATIONS_MOBILE,
+  MIN_PS_PARTICLES,
+  MAX_PS_PARTICLES,
+  DEFAULT_PS_PARTICLES_DESKTOP,
+  DEFAULT_PS_PARTICLES_MOBILE,
+  MIN_PS_INERTIA,
+  MAX_PS_INERTIA,
+  DEFAULT_PS_INERTIA_DESKTOP,
+  DEFAULT_PS_INERTIA_MOBILE,
+  MIN_PS_COGNITIVE,
+  MAX_PS_COGNITIVE,
+  DEFAULT_PS_COGNITIVE_DESKTOP,
+  DEFAULT_PS_COGNITIVE_MOBILE,
+  MIN_PS_SOCIAL,
+  MAX_PS_SOCIAL,
+  DEFAULT_PS_SOCIAL_DESKTOP,
+  DEFAULT_PS_SOCIAL_MOBILE,
+  MIN_MOMENTUM_LEARNING_RATE,
+  MAX_MOMENTUM_LEARNING_RATE,
+  DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP,
+  DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE,
+  MIN_MOMENTUM_BETA,
+  MAX_MOMENTUM_BETA,
+  DEFAULT_MOMENTUM_BETA_DESKTOP,
+  DEFAULT_MOMENTUM_BETA_MOBILE,
+  MIN_RS_CURVES,
+  MAX_RS_CURVES,
+  DEFAULT_RS_CURVES_DESKTOP,
+  DEFAULT_RS_CURVES_MOBILE,
+  POINT_RADIUS,
+  DOT_BORDER_COLOR,
+  DOT_BORDER_WIDTH,
+  BEST_CURVE_LINE_WIDTH,
+  OTHER_CURVE_LINE_WIDTH,
+  OTHER_CURVE_COLOR,
+  OTHER_CURVE_OPACITY,
+  MUTATION_DISTRIBUTION_TYPE,
+  MUTATION_MIN_VARIANCE,
+  MUTATION_VARIANCE_EXPONENT,
+  MUTATION_WEIGHT_VARIANCE_SCALES,
+  ADAPTIVE_VARIANCE_ENABLED,
+  ADAPTIVE_VARIANCE_MIN_SCALE,
+  ADAPTIVE_VARIANCE_MAX_SCALE,
+  ADAPTIVE_VARIANCE_FITNESS_TARGET,
+  WEIGHT_PROPORTIONAL_VARIANCE_ENABLED,
+  WEIGHT_PROPORTIONAL_VARIANCE_FACTOR,
+  WEIGHT_PROPORTIONAL_VARIANCE_MIN,
+  COORD_MIN,
+  COORD_MAX,
+  CURVE_HORIZONTAL_OVERDRAW,
+  CANVAS_SCALE,
+  PADDING,
+  MIN_CANVAS_SIZE,
+  MIN_CANVAS_SIZE_MOBILE,
+  VIEWPORT_HEIGHT_OFFSET,
+  VIEWPORT_HEIGHT_OFFSET_MOBILE,
+  VIEWPORT_WIDTH_OFFSET,
+  VIEWPORT_WIDTH_OFFSET_MOBILE,
+  MOBILE_BREAKPOINT,
+  PRIMARY_CURVE_RESOLUTION,
+  AUXILIARY_CURVE_RESOLUTION,
+  ERROR_BAR_LINE_WIDTH,
+  GRID_LINE_WIDTH,
+  AXIS_LINE_WIDTH,
+  COLOR_ERROR_BARS,
+  COLOR_POINT_BORDER,
+  COLOR_BACKGROUND,
+  COLOR_GRID,
+  COLOR_AXES,
+  COLOR_LABELS,
+  ALGORITHM_ORDER,
+  isMobile,
+  getAlgoColor,
+} from '../config';
 
 // ============================================================
-// Configuration
+// Reactive state
 // ============================================================
 
-const TAILWIND_PURPLE_500: string = '#a855f7';
-const TAILWIND_VIOLET_500: string = '#8b5cf6';
-const TAILWIND_INDIGO_500: string = '#6366f1';
-const TAILWIND_BLUE_500: string = '#3b82f6';
-const TAILWIND_CYAN_500: string = '#06b6d4';
-const TAILWIND_GREEN_600: string = '#16a34a';
-const TAILWIND_LIME_700: string = '#65a30d';
-const TAILWIND_EMERALD_600: string = '#059669';
-const TAILWIND_YELLOW_600: string = '#ca8a04';
-const TAILWIND_PINK_500: string = '#ec4899';
-const TAILWIND_FUCSHIA_500: string = '#d946ef';
-const TAILWIND_RED_500: string = '#fb2c36';
-const POINTS_DARK_GRAY: string = '#4a4a4a'; // Dark gray for points/data
-const POINTS_GRAY: string = '#888888'; // Gray for points/data
-
-const ALGO_GENETIC_ALGORITHM: string = TAILWIND_LIME_700;
-const ALGO_PARTICLE_SWARM: string = TAILWIND_EMERALD_600;
-const ALGO_GRADIENT_DESCENT: string = TAILWIND_BLUE_500;
-const ALGO_MOMENTUM_BASED_GD: string = TAILWIND_INDIGO_500;
-const ALGO_ADAM_OPTIMIZER: string = TAILWIND_VIOLET_500;
-const ALGO_SIMULATED_ANNEALING: string = TAILWIND_YELLOW_600;
-const ALGO_POLYNOMIAL_SOLVER: string = TAILWIND_PINK_500;
-const ALGO_RANDOM_SEARCH: string = TAILWIND_FUCSHIA_500;
-
-// Slider Ranges
-const MIN_POINTS: number = 1;
-const MAX_POINTS: number = 24;
-const DEFAULT_NUM_POINTS_DESKTOP: number = 5;
-const DEFAULT_NUM_POINTS_MOBILE: number = 5;
-
-const MIN_WEIGHTS: number = 1;
-const MAX_WEIGHTS: number = 24;
-const DEFAULT_NUM_WEIGHTS_DESKTOP: number = 5;
-const DEFAULT_NUM_WEIGHTS_MOBILE: number = 5;
-
-const MIN_CHILDREN: number = 2;
-const MAX_CHILDREN: number = 64;
-const DEFAULT_NUM_CHILDREN_DESKTOP: number = 5;
-const DEFAULT_NUM_CHILDREN_MOBILE: number = 5;
-
-const MIN_GENERATIONS_PER_SEC: number = 1;
-const MAX_GENERATIONS_PER_SEC: number = 256;
-const DEFAULT_GENERATIONS_PER_SEC_DESKTOP: number = 60;
-const DEFAULT_GENERATIONS_PER_SEC_MOBILE: number = 60;
-
-const MIN_MUTATION_VARIANCE: number = 0.01;
-const MAX_MUTATION_VARIANCE: number = 2;
-const DEFAULT_MUTATION_VARIANCE_DESKTOP: number = 1;
-const DEFAULT_MUTATION_VARIANCE_MOBILE: number = 1;
-
-const MIN_WEIGHT_PENALTY: number = 0;
-const MAX_WEIGHT_PENALTY: number = 1;
-const DEFAULT_WEIGHT_PENALTY_DESKTOP: number = 0;
-const DEFAULT_WEIGHT_PENALTY_MOBILE: number = 0;
-
-// Gradient Descent Parameters
-const MIN_LEARNING_RATE: number = 0.0001;
-const MAX_LEARNING_RATE: number = 1;
-const DEFAULT_LEARNING_RATE_DESKTOP: number = 0.1;
-const DEFAULT_LEARNING_RATE_MOBILE: number = 0.1;
-
-const MIN_STOCHASTICITY: number = 0;
-const MAX_STOCHASTICITY: number = 3;
-const DEFAULT_STOCHASTICITY_DESKTOP: number = 0;
-const DEFAULT_STOCHASTICITY_MOBILE: number = 0;
-
-// Adam Optimizer Parameters
-const MIN_ADAM_LEARNING_RATE: number = 0.0001;
-const MAX_ADAM_LEARNING_RATE: number = 1;
-const DEFAULT_ADAM_LEARNING_RATE_DESKTOP: number = 0.1;
-const DEFAULT_ADAM_LEARNING_RATE_MOBILE: number = 0.1;
-
-const MIN_ADAM_BETA1: number = 0;
-const MAX_ADAM_BETA1: number = 0.999;
-const DEFAULT_ADAM_BETA1_DESKTOP: number = 0.97;
-const DEFAULT_ADAM_BETA1_MOBILE: number = 0.97;
-
-const MIN_ADAM_BETA2: number = 0;
-const MAX_ADAM_BETA2: number = 0.9999;
-const DEFAULT_ADAM_BETA2_DESKTOP: number = 0.999;
-const DEFAULT_ADAM_BETA2_MOBILE: number = 0.999;
-
-const MIN_ADAM_EPSILON: number = 1e-10;
-const MAX_ADAM_EPSILON: number = 1e-6;
-const DEFAULT_ADAM_EPSILON_DESKTOP: number = 1e-8;
-const DEFAULT_ADAM_EPSILON_MOBILE: number = 1e-8;
-
-// Simulated Annealing Parameters
-const MIN_SA_INITIAL_TEMP: number = 0.1;
-const MAX_SA_INITIAL_TEMP: number = 10;
-const DEFAULT_SA_INITIAL_TEMP_DESKTOP: number = 1;
-const DEFAULT_SA_INITIAL_TEMP_MOBILE: number = 1;
-
-const MIN_SA_COOLING_RATE: number = 0.9;
-const MAX_SA_COOLING_RATE: number = 0.9999;
-const DEFAULT_SA_COOLING_RATE_DESKTOP: number = 0.995;
-const DEFAULT_SA_COOLING_RATE_MOBILE: number = 0.995;
-
-const MIN_SA_ITERATIONS: number = 1;
-const MAX_SA_ITERATIONS: number = 100;
-const DEFAULT_SA_ITERATIONS_DESKTOP: number = 10;
-const DEFAULT_SA_ITERATIONS_MOBILE: number = 10;
-
-// Particle Swarm Parameters
-const MIN_PS_PARTICLES: number = 2;
-const MAX_PS_PARTICLES: number = 64;
-const DEFAULT_PS_PARTICLES_DESKTOP: number = 20;
-const DEFAULT_PS_PARTICLES_MOBILE: number = 20;
-
-const MIN_PS_INERTIA: number = 0;
-const MAX_PS_INERTIA: number = 1;
-const DEFAULT_PS_INERTIA_DESKTOP: number = 0.7;
-const DEFAULT_PS_INERTIA_MOBILE: number = 0.7;
-
-const MIN_PS_COGNITIVE: number = 0;
-const MAX_PS_COGNITIVE: number = 4;
-const DEFAULT_PS_COGNITIVE_DESKTOP: number = 1.5;
-const DEFAULT_PS_COGNITIVE_MOBILE: number = 1.5;
-
-const MIN_PS_SOCIAL: number = 0;
-const MAX_PS_SOCIAL: number = 4;
-const DEFAULT_PS_SOCIAL_DESKTOP: number = 1.5;
-const DEFAULT_PS_SOCIAL_MOBILE: number = 1.5;
-
-// Momentum-Based GD Parameters
-const MIN_MOMENTUM_LEARNING_RATE: number = 0.0001;
-const MAX_MOMENTUM_LEARNING_RATE: number = 1;
-const DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP: number = 0.1;
-const DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE: number = 0.1;
-
-const MIN_MOMENTUM_BETA: number = 0;
-const MAX_MOMENTUM_BETA: number = 0.999;
-const DEFAULT_MOMENTUM_BETA_DESKTOP: number = 0.9;
-const DEFAULT_MOMENTUM_BETA_MOBILE: number = 0.9;
-
-// Random Search Parameters
-const MIN_RS_CURVES: number = 2;
-const MAX_RS_CURVES: number = 64;
-const DEFAULT_RS_CURVES_DESKTOP: number = 10;
-const DEFAULT_RS_CURVES_MOBILE: number = 10;
-
-// Point and Curve Generation
-const POINT_RADIUS: number = 8; // Size of data points on canvas
-
-// Dot/Point Colors (for canvas points and slider thumbs) - dynamic based on method
-const getAlgoColor = (): string => {
-  switch (solutionMethod.value) {
-    case 'genetic':
-      return ALGO_GENETIC_ALGORITHM;
-    case 'gradient':
-      return ALGO_GRADIENT_DESCENT;
-    case 'adam':
-      return ALGO_ADAM_OPTIMIZER;
-    case 'simulated-annealing':
-      return ALGO_SIMULATED_ANNEALING;
-    case 'particle-swarm':
-      return ALGO_PARTICLE_SWARM;
-    case 'momentum':
-      return ALGO_MOMENTUM_BASED_GD;
-    case 'polynomial-solver':
-      return ALGO_POLYNOMIAL_SOLVER;
-    case 'random-search':
-      return ALGO_RANDOM_SEARCH;
-    default:
-      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
-  }
-};
-const DOT_BORDER_COLOR: string = '#ffffff';
-const DOT_BORDER_WIDTH: number = 3;
-
-// Curve Drawing Styles - dynamic based on method
-const BEST_CURVE_LINE_WIDTH: number = 5;
-
-const OTHER_CURVE_LINE_WIDTH: number = 2;
-const OTHER_CURVE_COLOR: string = '#666666'; // Gray
-const OTHER_CURVE_OPACITY: number = 0.5;
-
-// Genetic Algorithm / Mutation
-type MutationDistribution = 'normal' | 'uniform';
-const MUTATION_DISTRIBUTION_TYPE = 'normal' satisfies MutationDistribution; // Distribution type: 'normal' (Gaussian) or 'uniform'
-const MUTATION_MIN_VARIANCE: number = 0.0; // Minimum variance (for index 0)
-const MUTATION_VARIANCE_EXPONENT: number = 1; // Variance curve exponent (1 = linear, 2 = quadratic, etc.)
-const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0]; // Variance multiplier per weight (if empty, uses 1.0 for all)
-
-// Adaptive Variance (based on fitness)
-const ADAPTIVE_VARIANCE_ENABLED: boolean = true;
-const ADAPTIVE_VARIANCE_MIN_SCALE: number = 0.01; // Minimum variance scale (when fitness is very low/good)
-const ADAPTIVE_VARIANCE_MAX_SCALE: number = 1.0; // Maximum variance scale (when fitness is high/bad)
-const ADAPTIVE_VARIANCE_FITNESS_TARGET: number = 0.1; // Fitness value that gives ~50% scale
-
-// Weight-Proportional Variance (variance scales with weight magnitude)
-const WEIGHT_PROPORTIONAL_VARIANCE_ENABLED: boolean = true;
-const WEIGHT_PROPORTIONAL_VARIANCE_FACTOR: number = 0.5; // How much to scale variance based on weight magnitude
-const WEIGHT_PROPORTIONAL_VARIANCE_MIN: number = 0.1; // Minimum variance multiplier (for weights near 0)
-
-// Coordinate System
-const COORD_MIN: number = -1;
-const COORD_MAX: number = 1;
-const CURVE_HORIZONTAL_OVERDRAW: number = 1.0; // Extend curve drawing beyond visible area (draws from -2 to 2)
-
-// Canvas Dimensions
 const CANVAS_SIZE = ref<number>(500);
-const CANVAS_SCALE: number = 2; // Render at 2x resolution for crisp display
-const PADDING: number = 25;
-const MIN_CANVAS_SIZE: number = 350;
-const MIN_CANVAS_SIZE_MOBILE: number = 280;
-const VIEWPORT_HEIGHT_OFFSET: number = 60;
-const VIEWPORT_HEIGHT_OFFSET_MOBILE: number = 450; // More offset on mobile for stacked layout
-const VIEWPORT_WIDTH_OFFSET: number = 660; // Increased for wider left panel
-const VIEWPORT_WIDTH_OFFSET_MOBILE: number = 40; // Minimal offset on mobile
-const MOBILE_BREAKPOINT: number = 768; // px
-
-// Curve Drawing Resolution
-const PRIMARY_CURVE_RESOLUTION: number = 300; // Number of points for best curve (higher = smoother)
-const AUXILIARY_CURVE_RESOLUTION: number = 80; // Number of points for auxiliary curves (genetic children, particle swarm particles)
-
-// Error Bars
-const ERROR_BAR_LINE_WIDTH: number = 3;
-
-// Grid and Axes
-const GRID_LINE_WIDTH: number = 1;
-const AXIS_LINE_WIDTH: number = 2;
-
-// Canvas Colors
-const COLOR_ERROR_BARS: string = TAILWIND_RED_500;
-const COLOR_POINT_BORDER: string = DOT_BORDER_COLOR;
-const COLOR_BACKGROUND: string = '#1a1a1a'; // Dark gray
-const COLOR_GRID: string = '#333'; // Dark gray
-const COLOR_AXES: string = '#666'; // Gray
-const COLOR_LABELS: string = '#aaa'; // Light gray
-
-// Determine if mobile based on initial viewport width
-const isMobile = (): boolean => window.innerWidth < MOBILE_BREAKPOINT;
 
 // Reactive state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -367,12 +268,6 @@ const saCurrentBest = ref<number[] | null>(null);
 const saBestFitness = ref<number>(Infinity);
 
 // Particle Swarm state
-interface Particle {
-  weights: number[];
-  velocity: number[];
-  bestWeights: number[];
-  bestFitness: number;
-}
 const psParticlesState = ref<Particle[]>([]);
 const psGlobalBestWeights = ref<number[]>([]);
 const psGlobalBestFitness = ref<number>(Infinity);
@@ -711,28 +606,10 @@ const closeAlgorithmSelectModal = (): void => {
 };
 
 // Solution method state
-type SolutionMethod =
-  | 'genetic'
-  | 'gradient'
-  | 'adam'
-  | 'simulated-annealing'
-  | 'particle-swarm'
-  | 'momentum'
-  | 'polynomial-solver'
-  | 'random-search';
-// Algorithm order when clicking through
-const ALGORITHM_ORDER: SolutionMethod[] = [
-  'gradient',
-  'momentum',
-  'adam',
-  'random-search',
-  'genetic',
-  'particle-swarm',
-  'simulated-annealing',
-  'polynomial-solver',
-];
-
 const solutionMethod = ref<SolutionMethod>('gradient');
+
+// Computed property for current algorithm color
+const currentAlgoColor = computed(() => getAlgoColor(solutionMethod.value));
 
 // Open algorithm selection modal (replaces cycling through algorithms)
 const openAlgorithmModal = (): void => {
@@ -1775,7 +1652,7 @@ const toCoordSystemCoords = (cx: number, cy: number): CoordSystemCoords => {
 
 // Get color for curve based on rank
 const getCurveColor = (index: number): string => {
-  return index === 0 ? getAlgoColor() : OTHER_CURVE_COLOR;
+  return index === 0 ? currentAlgoColor.value : OTHER_CURVE_COLOR;
 };
 
 // Find point at given canvas position (returns index or null)
@@ -2198,7 +2075,7 @@ watch(rsCurves, (): void => {
           :logarithmic="config.logarithmic"
           :logMidpoint="config.logMidpoint"
           :useScientificNotation="config.useScientificNotation"
-          :thumbColor="getAlgoColor()"
+          :thumbColor="currentAlgoColor"
         />
       </div>
 
@@ -2218,7 +2095,7 @@ watch(rsCurves, (): void => {
           :logarithmic="config.logarithmic"
           :logMidpoint="config.logMidpoint"
           :useScientificNotation="config.useScientificNotation"
-          :thumbColor="getAlgoColor()"
+          :thumbColor="currentAlgoColor"
         />
       </div>
 
@@ -2303,7 +2180,7 @@ watch(rsCurves, (): void => {
           <button
             @click="resetCurrentAlgorithm"
             class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-            :style="{ backgroundColor: getAlgoColor() }"
+            :style="{ backgroundColor: currentAlgoColor }"
             @mouseover="
               ($event.currentTarget as HTMLElement).style.filter =
                 'brightness(0.9)'
@@ -2326,7 +2203,7 @@ watch(rsCurves, (): void => {
           <button
             @click="resetParameters"
             class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-            :style="{ backgroundColor: getAlgoColor() }"
+            :style="{ backgroundColor: currentAlgoColor }"
             @mouseover="
               ($event.currentTarget as HTMLElement).style.filter =
                 'brightness(0.9)'

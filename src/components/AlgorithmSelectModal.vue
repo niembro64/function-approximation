@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ALGORITHMS } from '../config';
+
 interface Props {
   isOpen: boolean;
   currentAlgorithm: string;
@@ -25,17 +27,6 @@ const selectAlgorithm = (algorithm: string): void => {
   emit('select', algorithm);
   handleClose();
 };
-
-const algorithms = [
-  { id: 'gradient', name: 'Gradient Descent - Stochastic', color: '#3b82f6' },
-  { id: 'momentum', name: 'Gradient Descent - Momentum', color: '#6366f1' },
-  { id: 'adam', name: 'Gradient Descent - Adam', color: '#8b5cf6' },
-  { id: 'genetic', name: 'Genetic Algorithm', color: '#65a30d' },
-  { id: 'particle-swarm', name: 'Particle Swarm', color: '#059669' },
-  { id: 'random-search', name: 'Random Search', color: '#06b6d4' },
-  { id: 'simulated-annealing', name: 'Simulated Annealing', color: '#ca8a04' },
-  { id: 'polynomial-solver', name: 'Polynomial Solver', color: '#ec4899' },
-];
 </script>
 
 <template>
@@ -65,7 +56,7 @@ const algorithms = [
           <!-- Algorithm List -->
           <div class="space-y-2">
             <button
-              v-for="algo in algorithms"
+              v-for="algo in ALGORITHMS"
               :key="algo.id"
               @click="selectAlgorithm(algo.id)"
               class="w-full text-left px-4 py-3 rounded transition-all border-2"
