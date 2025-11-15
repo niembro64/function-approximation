@@ -1924,11 +1924,11 @@ watch(psParticles, (): void => {
             aria-label="Information"
             title="Learn more about this project"
           >
-            <span class="text-sm font-bold">i</span>
+            <span class="text-base md:text-sm font-bold">i</span>
           </button>
           <button
             @click="toggleSolutionMethod"
-            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
+            class="flex-1 py-3 md:py-2 px-2 text-sm md:text-base font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
             :style="{ backgroundColor: getAlgoColor() }"
             @mouseover="
               ($event.currentTarget as HTMLElement).style.filter =
@@ -2127,8 +2127,6 @@ watch(psParticles, (): void => {
     <!-- Info Modal -->
     <InfoModal
       :isOpen="isInfoModalOpen"
-      :upperBound="upperBound"
-      :numPoints="numPoints"
       @close="closeInfoModal"
     />
   </div>
