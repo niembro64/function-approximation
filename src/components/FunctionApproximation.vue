@@ -1910,91 +1910,133 @@ watch(psParticles, (): void => {
       </div>
 
       <!-- All Buttons -->
-      <div class="mb-2 md:mb-3 flex items-stretch gap-2 order-2 md:order-1">
-        <button
-          @click="openInfoModal"
-          class="w-8 h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all hover:bg-gray-500 active:translate-y-px shrink-0 self-center"
-          aria-label="Information"
-          title="Learn more about this project"
-        >
-          <span class="text-sm font-bold">i</span>
-        </button>
-        <button
-          @click="toggleSolutionMethod"
-          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-center flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getAlgoColor() }"
-          @mouseover="
-            ($event.currentTarget as HTMLElement).style.filter =
-              'brightness(0.9)'
-          "
-          @mouseout="
-            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
-          "
-          title="Switch optimization method"
-        >
-          <span v-if="solutionMethod === 'genetic'">Genetic</span>
-          <span v-else-if="solutionMethod === 'gradient'">Gradient</span>
-          <span v-else-if="solutionMethod === 'adam'">Adam</span>
-          <span v-else-if="solutionMethod === 'simulated-annealing'"
-            >Simulated</span
+      <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
+        <!-- First Row: Info + Algorithm -->
+        <div class="flex items-stretch gap-2">
+          <button
+            @click="openInfoModal"
+            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0 self-center"
+            style="filter: brightness(1)"
+            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            aria-label="Information"
+            title="Learn more about this project"
           >
-          <span v-else-if="solutionMethod === 'particle-swarm'">Particle</span>
-          <span v-else>Momentum</span>
+            <span class="text-sm font-bold">i</span>
+          </button>
+          <button
+            @click="toggleSolutionMethod"
+            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
+            :style="{ backgroundColor: getAlgoColor() }"
+            @mouseover="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+            @mouseout="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(1)'
+            "
+            @mousedown="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.8)'
+            "
+            @mouseup="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+            title="Switch optimization method"
+          >
+            <span v-if="solutionMethod === 'genetic'">Genetic Algorithm</span>
+            <span v-else-if="solutionMethod === 'gradient'"
+              >Gradient Descent - Stochastic</span
+            >
+            <span v-else-if="solutionMethod === 'adam'"
+              >Gradient Descent - Adam</span
+            >
+            <span v-else-if="solutionMethod === 'simulated-annealing'"
+              >Simulated Annealing</span
+            >
+            <span v-else-if="solutionMethod === 'particle-swarm'"
+              >Particle Swarm</span
+            >
+            <span v-else>Gradient Descent - Momentum</span>
+          </button>
+        </div>
 
-          <span v-if="solutionMethod === 'genetic'">Algo</span>
-          <span v-else-if="solutionMethod === 'gradient'">Descent</span>
-          <span v-else-if="solutionMethod === 'adam'">GD</span>
-          <span v-else-if="solutionMethod === 'simulated-annealing'"
-            >Annealing</span
+        <!-- Second Row: Reset/New Buttons -->
+        <div class="flex items-stretch gap-2">
+          <button
+            @click="resetCurrentAlgorithm"
+            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
+            :style="{ backgroundColor: getAlgoColor() }"
+            @mouseover="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+            @mouseout="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(1)'
+            "
+            @mousedown="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.8)'
+            "
+            @mouseup="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
           >
-          <span v-else-if="solutionMethod === 'particle-swarm'">Swarm</span>
-          <span v-else>GD</span>
-        </button>
-        <button
-          @click="resetCurrentAlgorithm"
-          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getAlgoColor() }"
-          @mouseover="
-            ($event.currentTarget as HTMLElement).style.filter =
-              'brightness(0.9)'
-          "
-          @mouseout="
-            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
-          "
-        >
-          <span>Reset</span>
-          <span>Algo</span>
-        </button>
-        <button
-          @click="resetParameters"
-          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getAlgoColor() }"
-          @mouseover="
-            ($event.currentTarget as HTMLElement).style.filter =
-              'brightness(0.9)'
-          "
-          @mouseout="
-            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
-          "
-        >
-          <span>Reset</span>
-          <span>Params</span>
-        </button>
-        <button
-          @click="generateRandomPoints"
-          class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: POINTS_DARK_GRAY }"
-          @mouseover="
-            ($event.currentTarget as HTMLElement).style.filter =
-              'brightness(0.9)'
-          "
-          @mouseout="
-            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
-          "
-        >
-          <span>New</span>
-          <span>Points</span>
-        </button>
+            Reset Algo
+          </button>
+          <button
+            @click="resetParameters"
+            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
+            :style="{ backgroundColor: getAlgoColor() }"
+            @mouseover="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+            @mouseout="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(1)'
+            "
+            @mousedown="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.8)'
+            "
+            @mouseup="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+          >
+            Reset Params
+          </button>
+          <button
+            @click="generateRandomPoints"
+            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
+            :style="{ backgroundColor: POINTS_DARK_GRAY }"
+            @mouseover="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+            @mouseout="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(1)'
+            "
+            @mousedown="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.8)'
+            "
+            @mouseup="
+              ($event.currentTarget as HTMLElement).style.filter =
+                'brightness(0.9)'
+            "
+          >
+            New Points
+          </button>
+        </div>
       </div>
 
       <!-- Table -->
