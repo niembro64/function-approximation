@@ -1785,16 +1785,16 @@ const draw = (): void => {
   ctx.fillText('0', PADDING - 15, center + 5);
   ctx.fillText(COORD_MAX.toString(), PADDING - 15, PADDING + 5);
 
-  // Display fitness in top-right corner
+  // Display fitness above graph area (drawn last so it's on top)
   if (bestCurve !== null) {
     const fitnessText: string = `Fitness: ${formatScientific(
       bestCurve.fitness,
       8
     )}`;
     ctx.font = '14px monospace';
-    ctx.fillStyle = getAlgoColor();
+    ctx.fillStyle = '#ffffff'; // Always white
     ctx.textAlign = 'right';
-    ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING + 15);
+    ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING - 10);
     ctx.textAlign = 'left'; // Reset to default
   }
 };
@@ -1941,7 +1941,7 @@ watch(psParticles, (): void => {
           <span v-else-if="solutionMethod === 'particle-swarm'">Particle</span>
           <span v-else>Momentum</span>
 
-          <span v-if="solutionMethod === 'genetic'">Algorithm</span>
+          <span v-if="solutionMethod === 'genetic'">Algo</span>
           <span v-else-if="solutionMethod === 'gradient'">Descent</span>
           <span v-else-if="solutionMethod === 'adam'">GD</span>
           <span v-else-if="solutionMethod === 'simulated-annealing'"
@@ -1963,7 +1963,7 @@ watch(psParticles, (): void => {
           "
         >
           <span>Reset</span>
-          <span>Algorithm</span>
+          <span>Algo</span>
         </button>
         <button
           @click="resetParameters"
@@ -1978,7 +1978,7 @@ watch(psParticles, (): void => {
           "
         >
           <span>Reset</span>
-          <span>Parameters</span>
+          <span>Params</span>
         </button>
         <button
           @click="generateRandomPoints"
