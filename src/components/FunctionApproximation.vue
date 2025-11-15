@@ -52,6 +52,7 @@ const TAILWIND_LIME_700: string = '#65a30d';
 const TAILWIND_EMERALD_600: string = '#059669';
 const TAILWIND_YELLOW_600: string = '#ca8a04';
 const TAILWIND_PINK_500: string = '#ec4899';
+const TAILWIND_FUCSHIA_500: string = '#d946ef';
 const TAILWIND_RED_500: string = '#fb2c36';
 const POINTS_DARK_GRAY: string = '#4a4a4a'; // Dark gray for points/data
 const POINTS_GRAY: string = '#888888'; // Gray for points/data
@@ -63,6 +64,7 @@ const ALGO_MOMENTUM_BASED_GD: string = TAILWIND_INDIGO_500;
 const ALGO_ADAM_OPTIMIZER: string = TAILWIND_VIOLET_500;
 const ALGO_SIMULATED_ANNEALING: string = TAILWIND_YELLOW_600;
 const ALGO_POLYNOMIAL_SOLVER: string = TAILWIND_PINK_500;
+const ALGO_RANDOM_SEARCH: string = TAILWIND_FUCSHIA_500;
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -175,6 +177,12 @@ const MAX_MOMENTUM_BETA: number = 0.999;
 const DEFAULT_MOMENTUM_BETA_DESKTOP: number = 0.9;
 const DEFAULT_MOMENTUM_BETA_MOBILE: number = 0.9;
 
+// Random Search Parameters
+const MIN_RS_CURVES: number = 2;
+const MAX_RS_CURVES: number = 64;
+const DEFAULT_RS_CURVES_DESKTOP: number = 10;
+const DEFAULT_RS_CURVES_MOBILE: number = 10;
+
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
@@ -195,6 +203,8 @@ const getAlgoColor = (): string => {
       return ALGO_MOMENTUM_BASED_GD;
     case 'polynomial-solver':
       return ALGO_POLYNOMIAL_SOLVER;
+    case 'random-search':
+      return ALGO_RANDOM_SEARCH;
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
@@ -368,6 +378,11 @@ const psGlobalBestFitness = ref<number>(Infinity);
 
 // Momentum state
 const momentumV = ref<number[]>([]); // Velocity
+
+// Random Search state
+const rsCurves = ref<number>(
+  isMobile() ? DEFAULT_RS_CURVES_MOBILE : DEFAULT_RS_CURVES_DESKTOP
+);
 
 // Common slider configurations for both methods
 const commonSliderConfigs: SliderConfig[] = [
@@ -584,6 +599,15 @@ const momentumSpecificSliders: SliderConfig[] = [
   },
 ];
 
+const randomSearchSpecificSliders: SliderConfig[] = [
+  {
+    label: '# Curves',
+    model: rsCurves,
+    min: MIN_RS_CURVES,
+    max: MAX_RS_CURVES,
+  },
+];
+
 // Computed slider configs based on solution method
 // Desktop: common sliders first (closest to top buttons)
 // Mobile: common sliders last (closest to bottom buttons)
@@ -616,6 +640,10 @@ const sliderConfigs = computed((): SliderConfig[] => {
       break;
     case 'momentum':
       specificSliders.push(...momentumSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
+    case 'random-search':
+      specificSliders.push(...randomSearchSpecificSliders);
       speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
       break;
     case 'polynomial-solver':
@@ -679,12 +707,14 @@ type SolutionMethod =
   | 'simulated-annealing'
   | 'particle-swarm'
   | 'momentum'
-  | 'polynomial-solver';
+  | 'polynomial-solver'
+  | 'random-search';
 // Algorithm order when clicking through
 const ALGORITHM_ORDER: SolutionMethod[] = [
   'gradient',
   'momentum',
   'adam',
+  'random-search',
   'genetic',
   'particle-swarm',
   'simulated-annealing',
@@ -724,7 +754,9 @@ const generateRandomPoints = (): void => {
       y: Math.random() * range + COORD_MIN,
     })
   );
-  updateFitness();
+
+  // Reset the current algorithm when points change (old solutions are no longer valid)
+  resetCurrentAlgorithm();
 };
 
 // Generate random weight (starts at 0)
@@ -800,6 +832,18 @@ const resetPolynomialSolver = (): void => {
   solvePolynomialExact();
 };
 
+const resetRandomSearch = (): void => {
+  // Generate single initial curve (will be improved by randomSearchStep)
+  curves.value = [
+    {
+      id: 0,
+      weights: Array.from({ length: numWeights.value }, (): number => randomNormal(0, 1)),
+      fitness: 0,
+    }
+  ];
+  updateFitness();
+};
+
 // Reset current algorithm
 const resetCurrentAlgorithm = (): void => {
   switch (solutionMethod.value) {
@@ -820,6 +864,9 @@ const resetCurrentAlgorithm = (): void => {
       break;
     case 'momentum':
       resetMomentumGD();
+      break;
+    case 'random-search':
+      resetRandomSearch();
       break;
     case 'polynomial-solver':
       resetPolynomialSolver();
@@ -909,6 +956,9 @@ const resetParameters = (): void => {
   momentumBeta.value = mobile
     ? DEFAULT_MOMENTUM_BETA_MOBILE
     : DEFAULT_MOMENTUM_BETA_DESKTOP;
+
+  // Random Search parameters
+  rsCurves.value = mobile ? DEFAULT_RS_CURVES_MOBILE : DEFAULT_RS_CURVES_DESKTOP;
 };
 
 // Generate normally distributed random number (Box-Muller transform)
@@ -1284,6 +1334,52 @@ const momentumStep = (): void => {
   updateFitness();
 };
 
+// Perform one Random Search step
+const randomSearchStep = (): void => {
+  if (curves.value.length === 0) return;
+
+  // Get current best
+  const currentBest: Curve = curves.value[0];
+  const currentBestFitness: number = calculateFitnessWithPenalty(currentBest);
+
+  // Generate N random candidates
+  const randomCandidates: Curve[] = Array.from(
+    { length: rsCurves.value },
+    (_value: unknown, i: number): Curve => ({
+      id: i,
+      weights: Array.from(
+        { length: numWeights.value },
+        () => randomNormal(0, 1) // Random weights: mean=0, stddev=1
+      ),
+      fitness: 0,
+    })
+  );
+
+  // Calculate fitness for all candidates
+  randomCandidates.forEach((candidate: Curve): void => {
+    candidate.fitness = calculateBaseFitness(candidate);
+  });
+
+  // Find the best candidate from this batch
+  let bestCandidate: Curve = randomCandidates[0];
+  let bestCandidateFitness: number = calculateFitnessWithPenalty(bestCandidate);
+
+  for (let i = 1; i < randomCandidates.length; i++) {
+    const candidate = randomCandidates[i];
+    const candidateFitness = calculateFitnessWithPenalty(candidate);
+    if (candidateFitness < bestCandidateFitness) {
+      bestCandidate = candidate;
+      bestCandidateFitness = candidateFitness;
+    }
+  }
+
+  // Keep the better of current best vs best candidate
+  if (bestCandidateFitness < currentBestFitness) {
+    curves.value = [{ id: 0, weights: [...bestCandidate.weights], fitness: bestCandidate.fitness }];
+  }
+  // else: keep current best (curves.value stays unchanged)
+};
+
 // Initialize particle swarm
 const initializeParticleSwarm = (): void => {
   psParticlesState.value = Array.from(
@@ -1483,6 +1579,9 @@ const animationLoop = (currentTime: number): void => {
         break;
       case 'momentum':
         momentumStep();
+        break;
+      case 'random-search':
+        randomSearchStep();
         break;
       case 'polynomial-solver':
         solvePolynomialExact();
@@ -1969,6 +2068,8 @@ onMounted((): void => {
     generateCurves();
   } else if (solutionMethod.value === 'particle-swarm') {
     initializeParticleSwarm();
+  } else if (solutionMethod.value === 'random-search') {
+    resetRandomSearch();
   } else {
     generateSingleCurve();
   }
@@ -1994,6 +2095,8 @@ watch(numWeights, (): void => {
   if (curves.value.length > 0) {
     if (solutionMethod.value === 'genetic') {
       generateCurves();
+    } else if (solutionMethod.value === 'random-search') {
+      resetRandomSearch();
     } else {
       generateSingleCurve();
     }
@@ -2014,6 +2117,16 @@ watch(psParticles, (): void => {
     psParticlesState.value.length > 0
   ) {
     initializeParticleSwarm();
+  }
+});
+
+// Regenerate random search when rsCurves changes
+watch(rsCurves, (): void => {
+  if (
+    solutionMethod.value === 'random-search' &&
+    curves.value.length > 0
+  ) {
+    resetRandomSearch();
   }
 });
 </script>
@@ -2116,6 +2229,9 @@ watch(psParticles, (): void => {
             >
             <span v-else-if="solutionMethod === 'particle-swarm'"
               >Particle Swarm</span
+            >
+            <span v-else-if="solutionMethod === 'random-search'"
+              >Random Search</span
             >
             <span v-else-if="solutionMethod === 'polynomial-solver'"
               >Polynomial Solver</span

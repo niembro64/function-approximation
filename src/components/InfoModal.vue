@@ -49,8 +49,8 @@ const handleBackdropClick = (event: MouseEvent): void => {
             <section>
               <h3 class="text-xl font-bold text-white mb-2">Overview</h3>
               <p>
-                This project demonstrates seven different optimization algorithms for approximating data points with polynomial functions.
-                Six algorithms iteratively optimize to minimize error, while one provides the exact algebraic solution.
+                This project demonstrates eight different optimization algorithms for approximating data points with polynomial functions.
+                Seven algorithms iteratively optimize to minimize error, while one provides the exact algebraic solution.
                 Click the algorithm button to cycle through and compare their performance.
               </p>
             </section>
@@ -155,6 +155,20 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 </div>
 
                 <div>
+                  <h4 class="font-bold mb-1 text-base" style="color: #06b6d4">Random Search</h4>
+                  <p class="mb-2">
+                    Baseline algorithm with no learning - generates multiple random weight combinations per iteration while tracking the global best solution.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>Pure Exploration:</strong> Each iteration generates completely random weight sets with no memory</li>
+                    <li><strong>No Learning:</strong> Unlike evolutionary algorithms, there's no mutation or improvement of existing solutions</li>
+                    <li><strong>Global Best:</strong> Tracks the best solution ever found across all iterations</li>
+                    <li><strong>Visualization:</strong> Shows current random samples plus the best-ever solution</li>
+                    <li><strong>Parameters:</strong> # Curves (how many random samples per iteration)</li>
+                  </ul>
+                </div>
+
+                <div>
                   <h4 class="font-bold mb-1 text-base" style="color: #ca8a04">Simulated Annealing</h4>
                   <p class="mb-2">
                     Inspired by metallurgical annealing - accepts worse solutions probabilistically to escape local minima, cooling over time.
@@ -241,6 +255,13 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 </ul>
               </div>
 
+              <div class="mb-3">
+                <h4 class="font-bold mb-1" style="color: #06b6d4">Random Search</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong># Curves:</strong> Number of random weight combinations to test per iteration</li>
+                </ul>
+              </div>
+
               <div>
                 <h4 class="font-bold mb-1" style="color: #ca8a04">Simulated Annealing</h4>
                 <ul class="list-disc list-inside space-y-1 text-sm">
@@ -258,7 +279,7 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 adapt to find the best polynomial fit for your custom data configuration.
               </p>
               <ul class="list-disc list-inside space-y-1 text-sm">
-                <li><strong>Algorithm Button:</strong> Cycle through all six optimization algorithms</li>
+                <li><strong>Algorithm Button:</strong> Cycle through all seven optimization algorithms</li>
                 <li><strong>Reset Algo:</strong> Restart the current algorithm from a fresh state</li>
                 <li><strong>Reset Params:</strong> Reset all sliders to their default values</li>
                 <li><strong>New Points:</strong> Generate a new random set of data points</li>
