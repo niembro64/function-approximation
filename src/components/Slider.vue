@@ -159,6 +159,11 @@ const displayValue = (): string => {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
 
+.custom-slider:active::-webkit-slider-thumb,
+.custom-slider:focus::-webkit-slider-thumb {
+  background: #ffffff !important;
+}
+
 .custom-slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
@@ -174,6 +179,11 @@ const displayValue = (): string => {
   filter: brightness(0.9);
   transform: scale(1.1);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.custom-slider:active::-moz-range-thumb,
+.custom-slider:focus::-moz-range-thumb {
+  background: #ffffff !important;
 }
 
 .custom-slider::-moz-range-track {
