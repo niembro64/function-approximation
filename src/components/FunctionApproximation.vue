@@ -669,16 +669,16 @@ type SolutionMethod =
   | 'polynomial-solver';
 // Algorithm order when clicking through
 const ALGORITHM_ORDER: SolutionMethod[] = [
-  'genetic',
-  'particle-swarm',
   'gradient',
   'momentum',
   'adam',
+  'genetic',
+  'particle-swarm',
   'simulated-annealing',
   'polynomial-solver',
 ];
 
-const solutionMethod = ref<SolutionMethod>('genetic');
+const solutionMethod = ref<SolutionMethod>('gradient');
 
 const toggleSolutionMethod = (): void => {
   // Find current index in the order array
