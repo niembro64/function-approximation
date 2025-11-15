@@ -585,61 +585,74 @@ const momentumSpecificSliders: SliderConfig[] = [
 ];
 
 // Computed slider configs based on solution method
+// Desktop: common sliders first (closest to top buttons)
+// Mobile: common sliders last (closest to bottom buttons)
 const sliderConfigs = computed((): SliderConfig[] => {
+  const mobile = isMobile();
+  const specificSliders: SliderConfig[] = [];
+  const speedAndPenalty: SliderConfig[] = [];
+
+  // Get algorithm-specific sliders and speed/penalty
   switch (solutionMethod.value) {
     case 'genetic':
-      // Genetic: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...geneticSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...geneticSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'gradient':
-      // Gradient: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...gradientSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...gradientSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'adam':
-      // Adam: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...adamSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...adamSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'simulated-annealing':
-      // Simulated Annealing: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...saSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...saSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'particle-swarm':
-      // Particle Swarm: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...psSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...psSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'momentum':
-      // Momentum: common sliders first, then specific sliders, then speed/penalty
-      return [
-        ...commonSliderConfigs,
-        ...momentumSpecificSliders,
-        speedSliderConfig.value,
-        weightPenaltySliderConfig,
-      ];
+      specificSliders.push(...momentumSpecificSliders);
+      speedAndPenalty.push(speedSliderConfig.value, weightPenaltySliderConfig);
+      break;
     case 'polynomial-solver':
-      // Polynomial Solver: only common sliders (no optimization parameters needed)
+      // Polynomial Solver: only common sliders
       return [...commonSliderConfigs];
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+  }
+
+  // Order sliders based on device type
+  if (mobile) {
+    // Mobile: specific (with Learning Rate last), speed/penalty, then common (buttons are below)
+    // Extract Learning Rate slider if it exists
+    const learningRateIndex = specificSliders.findIndex(
+      (s) => s.label === 'Learning Rate'
+    );
+    let learningRateSlider: SliderConfig | null = null;
+    let otherSpecificSliders = specificSliders;
+
+    if (learningRateIndex !== -1) {
+      learningRateSlider = specificSliders[learningRateIndex];
+      otherSpecificSliders = [
+        ...specificSliders.slice(0, learningRateIndex),
+        ...specificSliders.slice(learningRateIndex + 1),
+      ];
+    }
+
+    // Build mobile order: other specific, learning rate, speed/penalty, common
+    const mobileOrder: SliderConfig[] = [...otherSpecificSliders];
+    if (learningRateSlider !== null) {
+      mobileOrder.push(learningRateSlider);
+    }
+    mobileOrder.push(...speedAndPenalty, ...commonSliderConfigs);
+    return mobileOrder;
+  } else {
+    // Desktop: common, specific, then speed/penalty (buttons are above)
+    return [...commonSliderConfigs, ...specificSliders, ...speedAndPenalty];
   }
 });
 
