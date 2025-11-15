@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, type Ref } from 'vue';
 import Slider from './Slider.vue';
-import Formula from './Formula.vue';
 import WeightCell from './WeightCell.vue';
 import InfoModal from './InfoModal.vue';
 import { generateScientificNotation } from '../utils/formatters';
@@ -43,14 +42,24 @@ interface SliderConfig {
 // Configuration
 // ============================================================
 
-const TAILWIND_BLUE_500: string = '#3b82f6';
-// const TAILWIND_CYAN_500: string = '#06b6d4';
-const TAILWIND_GREEN_600: string = '#16a34a';
-const TAILWIND_YELLOW_600: string = '#ca8a04';
-const TAILWIND_ORANGE_500: string = '#f97316';
-const TAILWIND_RED_500: string = '#fb2c36';
 const TAILWIND_PURPLE_500: string = '#a855f7';
+const TAILWIND_VIOLET_500: string = '#8b5cf6';
+const TAILWIND_INDIGO_500: string = '#6366f1';
+const TAILWIND_BLUE_500: string = '#3b82f6';
+const TAILWIND_CYAN_500: string = '#06b6d4';
+const TAILWIND_GREEN_600: string = '#16a34a';
+const TAILWIND_LIME_700: string = '#65a30d';
+const TAILWIND_EMERALD_600: string = '#059669';
+const TAILWIND_YELLOW_600: string = '#ca8a04';
+const TAILWIND_RED_500: string = '#fb2c36';
 const POINTS_DARK_GRAY: string = '#4a4a4a'; // Dark gray for points/data
+
+const ALGO_GENETIC_ALGORITHM: string = TAILWIND_LIME_700;
+const ALGO_PARTICLE_SWARM: string = TAILWIND_EMERALD_600;
+const ALGO_GRADIENT_DESCENT: string = TAILWIND_BLUE_500;
+const ALGO_MOMENTUM_BASED_GD: string = TAILWIND_INDIGO_500;
+const ALGO_ADAM_OPTIMIZER: string = TAILWIND_VIOLET_500;
+const ALGO_SIMULATED_ANNEALING: string = TAILWIND_YELLOW_600;
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -170,17 +179,17 @@ const POINT_RADIUS: number = 8; // Size of data points on canvas
 const getAlgoColor = (): string => {
   switch (solutionMethod.value) {
     case 'genetic':
-      return TAILWIND_GREEN_600;
+      return ALGO_GENETIC_ALGORITHM;
     case 'gradient':
-      return TAILWIND_BLUE_500;
+      return ALGO_GRADIENT_DESCENT;
     case 'adam':
-      return TAILWIND_YELLOW_600;
+      return ALGO_ADAM_OPTIMIZER;
     case 'simulated-annealing':
-      return TAILWIND_PURPLE_500;
+      return ALGO_SIMULATED_ANNEALING;
     case 'particle-swarm':
-      return TAILWIND_RED_500;
+      return ALGO_PARTICLE_SWARM;
     case 'momentum':
-      return TAILWIND_ORANGE_500;
+      return ALGO_MOMENTUM_BASED_GD;
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
@@ -190,24 +199,7 @@ const DOT_BORDER_WIDTH: number = 3;
 
 // Curve Drawing Styles - dynamic based on method
 const BEST_CURVE_LINE_WIDTH: number = 5;
-// const getBestCurveColor = (): string => {
-//   switch (solutionMethod.value) {
-//     case 'genetic':
-//       return TAILWIND_GREEN_600;
-//     case 'gradient':
-//       return TAILWIND_BLUE_500;
-//     case 'adam':
-//       return TAILWIND_YELLOW_600;
-//     case 'simulated-annealing':
-//       return TAILWIND_PURPLE_500;
-//     case 'particle-swarm':
-//       return TAILWIND_ORANGE_500;
-//     case 'momentum':
-//       return TAILWIND_CYAN_500;
-//     default:
-//       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
-//   }
-// };
+
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
 const OTHER_CURVE_OPACITY: number = 0.5;
@@ -668,32 +660,28 @@ type SolutionMethod =
   | 'simulated-annealing'
   | 'particle-swarm'
   | 'momentum';
+// Algorithm order when clicking through
+const ALGORITHM_ORDER: SolutionMethod[] = [
+  'genetic',
+  'particle-swarm',
+  'gradient',
+  'momentum',
+  'adam',
+  'simulated-annealing',
+];
+
 const solutionMethod = ref<SolutionMethod>('genetic');
 
 const toggleSolutionMethod = (): void => {
-  // Cycle through all methods
-  switch (solutionMethod.value) {
-    case 'genetic':
-      solutionMethod.value = 'gradient';
-      break;
-    case 'gradient':
-      solutionMethod.value = 'adam';
-      break;
-    case 'adam':
-      solutionMethod.value = 'simulated-annealing';
-      break;
-    case 'simulated-annealing':
-      solutionMethod.value = 'particle-swarm';
-      break;
-    case 'particle-swarm':
-      solutionMethod.value = 'momentum';
-      break;
-    case 'momentum':
-      solutionMethod.value = 'genetic';
-      break;
-    default:
-      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+  // Find current index in the order array
+  const currentIndex = ALGORITHM_ORDER.indexOf(solutionMethod.value);
+  if (currentIndex === -1) {
+    throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
+
+  // Move to next algorithm (wrap around to start if at end)
+  const nextIndex = (currentIndex + 1) % ALGORITHM_ORDER.length;
+  solutionMethod.value = ALGORITHM_ORDER[nextIndex];
 
   stopEvolution();
   resetCurrentAlgorithm();
@@ -816,39 +804,81 @@ const resetParameters = (): void => {
   const mobile = isMobile();
 
   // Common parameters
-  numPoints.value = mobile ? DEFAULT_NUM_POINTS_MOBILE : DEFAULT_NUM_POINTS_DESKTOP;
-  numWeights.value = mobile ? DEFAULT_NUM_WEIGHTS_MOBILE : DEFAULT_NUM_WEIGHTS_DESKTOP;
-  generationsPerSec.value = mobile ? DEFAULT_GENERATIONS_PER_SEC_MOBILE : DEFAULT_GENERATIONS_PER_SEC_DESKTOP;
-  weightPenalty.value = mobile ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP;
+  numPoints.value = mobile
+    ? DEFAULT_NUM_POINTS_MOBILE
+    : DEFAULT_NUM_POINTS_DESKTOP;
+  numWeights.value = mobile
+    ? DEFAULT_NUM_WEIGHTS_MOBILE
+    : DEFAULT_NUM_WEIGHTS_DESKTOP;
+  generationsPerSec.value = mobile
+    ? DEFAULT_GENERATIONS_PER_SEC_MOBILE
+    : DEFAULT_GENERATIONS_PER_SEC_DESKTOP;
+  weightPenalty.value = mobile
+    ? DEFAULT_WEIGHT_PENALTY_MOBILE
+    : DEFAULT_WEIGHT_PENALTY_DESKTOP;
 
   // Genetic Algorithm parameters
-  numChildren.value = mobile ? DEFAULT_NUM_CHILDREN_MOBILE : DEFAULT_NUM_CHILDREN_DESKTOP;
-  mutationVariance.value = mobile ? DEFAULT_MUTATION_VARIANCE_MOBILE : DEFAULT_MUTATION_VARIANCE_DESKTOP;
+  numChildren.value = mobile
+    ? DEFAULT_NUM_CHILDREN_MOBILE
+    : DEFAULT_NUM_CHILDREN_DESKTOP;
+  mutationVariance.value = mobile
+    ? DEFAULT_MUTATION_VARIANCE_MOBILE
+    : DEFAULT_MUTATION_VARIANCE_DESKTOP;
 
   // Gradient Descent parameters
-  learningRate.value = mobile ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP;
-  stochasticity.value = mobile ? DEFAULT_STOCHASTICITY_MOBILE : DEFAULT_STOCHASTICITY_DESKTOP;
+  learningRate.value = mobile
+    ? DEFAULT_LEARNING_RATE_MOBILE
+    : DEFAULT_LEARNING_RATE_DESKTOP;
+  stochasticity.value = mobile
+    ? DEFAULT_STOCHASTICITY_MOBILE
+    : DEFAULT_STOCHASTICITY_DESKTOP;
 
   // Adam Optimizer parameters
-  adamLearningRate.value = mobile ? DEFAULT_ADAM_LEARNING_RATE_MOBILE : DEFAULT_ADAM_LEARNING_RATE_DESKTOP;
-  adamBeta1.value = mobile ? DEFAULT_ADAM_BETA1_MOBILE : DEFAULT_ADAM_BETA1_DESKTOP;
-  adamBeta2.value = mobile ? DEFAULT_ADAM_BETA2_MOBILE : DEFAULT_ADAM_BETA2_DESKTOP;
-  adamEpsilon.value = mobile ? DEFAULT_ADAM_EPSILON_MOBILE : DEFAULT_ADAM_EPSILON_DESKTOP;
+  adamLearningRate.value = mobile
+    ? DEFAULT_ADAM_LEARNING_RATE_MOBILE
+    : DEFAULT_ADAM_LEARNING_RATE_DESKTOP;
+  adamBeta1.value = mobile
+    ? DEFAULT_ADAM_BETA1_MOBILE
+    : DEFAULT_ADAM_BETA1_DESKTOP;
+  adamBeta2.value = mobile
+    ? DEFAULT_ADAM_BETA2_MOBILE
+    : DEFAULT_ADAM_BETA2_DESKTOP;
+  adamEpsilon.value = mobile
+    ? DEFAULT_ADAM_EPSILON_MOBILE
+    : DEFAULT_ADAM_EPSILON_DESKTOP;
 
   // Simulated Annealing parameters
-  saInitialTemp.value = mobile ? DEFAULT_SA_INITIAL_TEMP_MOBILE : DEFAULT_SA_INITIAL_TEMP_DESKTOP;
-  saCoolingRate.value = mobile ? DEFAULT_SA_COOLING_RATE_MOBILE : DEFAULT_SA_COOLING_RATE_DESKTOP;
-  saIterations.value = mobile ? DEFAULT_SA_ITERATIONS_MOBILE : DEFAULT_SA_ITERATIONS_DESKTOP;
+  saInitialTemp.value = mobile
+    ? DEFAULT_SA_INITIAL_TEMP_MOBILE
+    : DEFAULT_SA_INITIAL_TEMP_DESKTOP;
+  saCoolingRate.value = mobile
+    ? DEFAULT_SA_COOLING_RATE_MOBILE
+    : DEFAULT_SA_COOLING_RATE_DESKTOP;
+  saIterations.value = mobile
+    ? DEFAULT_SA_ITERATIONS_MOBILE
+    : DEFAULT_SA_ITERATIONS_DESKTOP;
 
   // Particle Swarm parameters
-  psParticles.value = mobile ? DEFAULT_PS_PARTICLES_MOBILE : DEFAULT_PS_PARTICLES_DESKTOP;
-  psInertia.value = mobile ? DEFAULT_PS_INERTIA_MOBILE : DEFAULT_PS_INERTIA_DESKTOP;
-  psCognitive.value = mobile ? DEFAULT_PS_COGNITIVE_MOBILE : DEFAULT_PS_COGNITIVE_DESKTOP;
-  psSocial.value = mobile ? DEFAULT_PS_SOCIAL_MOBILE : DEFAULT_PS_SOCIAL_DESKTOP;
+  psParticles.value = mobile
+    ? DEFAULT_PS_PARTICLES_MOBILE
+    : DEFAULT_PS_PARTICLES_DESKTOP;
+  psInertia.value = mobile
+    ? DEFAULT_PS_INERTIA_MOBILE
+    : DEFAULT_PS_INERTIA_DESKTOP;
+  psCognitive.value = mobile
+    ? DEFAULT_PS_COGNITIVE_MOBILE
+    : DEFAULT_PS_COGNITIVE_DESKTOP;
+  psSocial.value = mobile
+    ? DEFAULT_PS_SOCIAL_MOBILE
+    : DEFAULT_PS_SOCIAL_DESKTOP;
 
   // Momentum-Based GD parameters
-  momentumLearningRate.value = mobile ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP;
-  momentumBeta.value = mobile ? DEFAULT_MOMENTUM_BETA_MOBILE : DEFAULT_MOMENTUM_BETA_DESKTOP;
+  momentumLearningRate.value = mobile
+    ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE
+    : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP;
+  momentumBeta.value = mobile
+    ? DEFAULT_MOMENTUM_BETA_MOBILE
+    : DEFAULT_MOMENTUM_BETA_DESKTOP;
 };
 
 // Generate normally distributed random number (Box-Muller transform)
@@ -1759,7 +1789,7 @@ const draw = (): void => {
   if (bestCurve !== null) {
     const fitnessText: string = `Fitness: ${formatScientific(
       bestCurve.fitness,
-      10
+      8
     )}`;
     ctx.font = '14px monospace';
     ctx.fillStyle = getAlgoColor();
@@ -1909,10 +1939,11 @@ watch(psParticles, (): void => {
             >Simulated</span
           >
           <span v-else-if="solutionMethod === 'particle-swarm'">Particle</span>
-          <span v-else>Momentum-Based</span>
+          <span v-else>Momentum</span>
+
           <span v-if="solutionMethod === 'genetic'">Algorithm</span>
           <span v-else-if="solutionMethod === 'gradient'">Descent</span>
-          <span v-else-if="solutionMethod === 'adam'">Optimizer</span>
+          <span v-else-if="solutionMethod === 'adam'">GD</span>
           <span v-else-if="solutionMethod === 'simulated-annealing'"
             >Annealing</span
           >
