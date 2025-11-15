@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed, type Ref } from 'vue';
 import Slider from './Slider.vue';
 import Formula from './Formula.vue';
 import WeightCell from './WeightCell.vue';
@@ -43,10 +43,14 @@ interface SliderConfig {
 // Configuration
 // ============================================================
 
-const TAILWIND_RED_500: string = '#fb2c36';
-const TAILWIND_GREEN_600: string = '#16a34a';
 const TAILWIND_BLUE_500: string = '#3b82f6';
+// const TAILWIND_CYAN_500: string = '#06b6d4';
+const TAILWIND_GREEN_600: string = '#16a34a';
 const TAILWIND_YELLOW_600: string = '#ca8a04';
+const TAILWIND_ORANGE_500: string = '#f97316';
+const TAILWIND_RED_500: string = '#fb2c36';
+const TAILWIND_PURPLE_500: string = '#a855f7';
+const POINTS_DARK_GRAY: string = '#4a4a4a'; // Dark gray for points/data
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -111,25 +115,99 @@ const MAX_ADAM_EPSILON: number = 1e-6;
 const DEFAULT_ADAM_EPSILON_DESKTOP: number = 1e-8;
 const DEFAULT_ADAM_EPSILON_MOBILE: number = 1e-8;
 
+// Simulated Annealing Parameters
+const MIN_SA_INITIAL_TEMP: number = 0.1;
+const MAX_SA_INITIAL_TEMP: number = 10;
+const DEFAULT_SA_INITIAL_TEMP_DESKTOP: number = 1;
+const DEFAULT_SA_INITIAL_TEMP_MOBILE: number = 1;
+
+const MIN_SA_COOLING_RATE: number = 0.9;
+const MAX_SA_COOLING_RATE: number = 0.9999;
+const DEFAULT_SA_COOLING_RATE_DESKTOP: number = 0.995;
+const DEFAULT_SA_COOLING_RATE_MOBILE: number = 0.995;
+
+const MIN_SA_ITERATIONS: number = 1;
+const MAX_SA_ITERATIONS: number = 100;
+const DEFAULT_SA_ITERATIONS_DESKTOP: number = 10;
+const DEFAULT_SA_ITERATIONS_MOBILE: number = 10;
+
+// Particle Swarm Parameters
+const MIN_PS_PARTICLES: number = 2;
+const MAX_PS_PARTICLES: number = 64;
+const DEFAULT_PS_PARTICLES_DESKTOP: number = 20;
+const DEFAULT_PS_PARTICLES_MOBILE: number = 20;
+
+const MIN_PS_INERTIA: number = 0;
+const MAX_PS_INERTIA: number = 1;
+const DEFAULT_PS_INERTIA_DESKTOP: number = 0.7;
+const DEFAULT_PS_INERTIA_MOBILE: number = 0.7;
+
+const MIN_PS_COGNITIVE: number = 0;
+const MAX_PS_COGNITIVE: number = 4;
+const DEFAULT_PS_COGNITIVE_DESKTOP: number = 1.5;
+const DEFAULT_PS_COGNITIVE_MOBILE: number = 1.5;
+
+const MIN_PS_SOCIAL: number = 0;
+const MAX_PS_SOCIAL: number = 4;
+const DEFAULT_PS_SOCIAL_DESKTOP: number = 1.5;
+const DEFAULT_PS_SOCIAL_MOBILE: number = 1.5;
+
+// Momentum-Based GD Parameters
+const MIN_MOMENTUM_LEARNING_RATE: number = 0.0001;
+const MAX_MOMENTUM_LEARNING_RATE: number = 1;
+const DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP: number = 0.1;
+const DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE: number = 0.1;
+
+const MIN_MOMENTUM_BETA: number = 0;
+const MAX_MOMENTUM_BETA: number = 0.999;
+const DEFAULT_MOMENTUM_BETA_DESKTOP: number = 0.9;
+const DEFAULT_MOMENTUM_BETA_MOBILE: number = 0.9;
+
 // Point and Curve Generation
 const POINT_RADIUS: number = 8; // Size of data points on canvas
 
 // Dot/Point Colors (for canvas points and slider thumbs) - dynamic based on method
-const getDotColor = (): string => {
-  if (solutionMethod.value === 'genetic') return TAILWIND_GREEN_600;
-  if (solutionMethod.value === 'gradient') return TAILWIND_BLUE_500;
-  return TAILWIND_YELLOW_600;
+const getAlgoColor = (): string => {
+  switch (solutionMethod.value) {
+    case 'genetic':
+      return TAILWIND_GREEN_600;
+    case 'gradient':
+      return TAILWIND_BLUE_500;
+    case 'adam':
+      return TAILWIND_YELLOW_600;
+    case 'simulated-annealing':
+      return TAILWIND_PURPLE_500;
+    case 'particle-swarm':
+      return TAILWIND_RED_500;
+    case 'momentum':
+      return TAILWIND_ORANGE_500;
+    default:
+      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+  }
 };
 const DOT_BORDER_COLOR: string = '#ffffff';
 const DOT_BORDER_WIDTH: number = 3;
 
 // Curve Drawing Styles - dynamic based on method
 const BEST_CURVE_LINE_WIDTH: number = 5;
-const getBestCurveColor = (): string => {
-  if (solutionMethod.value === 'genetic') return TAILWIND_GREEN_600;
-  if (solutionMethod.value === 'gradient') return TAILWIND_BLUE_500;
-  return TAILWIND_YELLOW_600;
-};
+// const getBestCurveColor = (): string => {
+//   switch (solutionMethod.value) {
+//     case 'genetic':
+//       return TAILWIND_GREEN_600;
+//     case 'gradient':
+//       return TAILWIND_BLUE_500;
+//     case 'adam':
+//       return TAILWIND_YELLOW_600;
+//     case 'simulated-annealing':
+//       return TAILWIND_PURPLE_500;
+//     case 'particle-swarm':
+//       return TAILWIND_ORANGE_500;
+//     case 'momentum':
+//       return TAILWIND_CYAN_500;
+//     default:
+//       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+//   }
+// };
 const OTHER_CURVE_LINE_WIDTH: number = 2;
 const OTHER_CURVE_COLOR: string = '#666666'; // Gray
 const OTHER_CURVE_OPACITY: number = 0.5;
@@ -236,6 +314,35 @@ const adamBeta2 = ref<number>(
 const adamEpsilon = ref<number>(
   isMobile() ? DEFAULT_ADAM_EPSILON_MOBILE : DEFAULT_ADAM_EPSILON_DESKTOP
 );
+const saInitialTemp = ref<number>(
+  isMobile() ? DEFAULT_SA_INITIAL_TEMP_MOBILE : DEFAULT_SA_INITIAL_TEMP_DESKTOP
+);
+const saCoolingRate = ref<number>(
+  isMobile() ? DEFAULT_SA_COOLING_RATE_MOBILE : DEFAULT_SA_COOLING_RATE_DESKTOP
+);
+const saIterations = ref<number>(
+  isMobile() ? DEFAULT_SA_ITERATIONS_MOBILE : DEFAULT_SA_ITERATIONS_DESKTOP
+);
+const psParticles = ref<number>(
+  isMobile() ? DEFAULT_PS_PARTICLES_MOBILE : DEFAULT_PS_PARTICLES_DESKTOP
+);
+const psInertia = ref<number>(
+  isMobile() ? DEFAULT_PS_INERTIA_MOBILE : DEFAULT_PS_INERTIA_DESKTOP
+);
+const psCognitive = ref<number>(
+  isMobile() ? DEFAULT_PS_COGNITIVE_MOBILE : DEFAULT_PS_COGNITIVE_DESKTOP
+);
+const psSocial = ref<number>(
+  isMobile() ? DEFAULT_PS_SOCIAL_MOBILE : DEFAULT_PS_SOCIAL_DESKTOP
+);
+const momentumLearningRate = ref<number>(
+  isMobile()
+    ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE
+    : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP
+);
+const momentumBeta = ref<number>(
+  isMobile() ? DEFAULT_MOMENTUM_BETA_MOBILE : DEFAULT_MOMENTUM_BETA_DESKTOP
+);
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
 let generationAccumulator: number = 0;
@@ -244,6 +351,25 @@ let generationAccumulator: number = 0;
 const adamM = ref<number[]>([]); // First moment (mean)
 const adamV = ref<number[]>([]); // Second moment (variance)
 const adamT = ref<number>(0); // Time step
+
+// Simulated Annealing state
+const saTemperature = ref<number>(saInitialTemp.value);
+const saCurrentBest = ref<number[] | null>(null);
+const saBestFitness = ref<number>(Infinity);
+
+// Particle Swarm state
+interface Particle {
+  weights: number[];
+  velocity: number[];
+  bestWeights: number[];
+  bestFitness: number;
+}
+const psParticlesState = ref<Particle[]>([]);
+const psGlobalBestWeights = ref<number[]>([]);
+const psGlobalBestFitness = ref<number>(Infinity);
+
+// Momentum state
+const momentumV = ref<number[]>([]); // Velocity
 
 // Common slider configurations for both methods
 const commonSliderConfigs: SliderConfig[] = [
@@ -371,34 +497,151 @@ const adamSpecificSliders: SliderConfig[] = [
   },
 ];
 
+// Simulated Annealing specific sliders
+const saSpecificSliders: SliderConfig[] = [
+  {
+    label: 'Initial Temp',
+    model: saInitialTemp,
+    min: MIN_SA_INITIAL_TEMP,
+    max: MAX_SA_INITIAL_TEMP,
+    step: 0.1,
+    decimals: 2,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Cooling Rate',
+    model: saCoolingRate,
+    min: MIN_SA_COOLING_RATE,
+    max: MAX_SA_COOLING_RATE,
+    step: 0.0001,
+    decimals: 4,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Iterations/Temp',
+    model: saIterations,
+    min: MIN_SA_ITERATIONS,
+    max: MAX_SA_ITERATIONS,
+  },
+];
+
+// Particle Swarm specific sliders
+const psSpecificSliders: SliderConfig[] = [
+  {
+    label: '# Particles',
+    model: psParticles,
+    min: MIN_PS_PARTICLES,
+    max: MAX_PS_PARTICLES,
+  },
+  {
+    label: 'Inertia',
+    model: psInertia,
+    min: MIN_PS_INERTIA,
+    max: MAX_PS_INERTIA,
+    step: 0.01,
+    decimals: 2,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Cognitive',
+    model: psCognitive,
+    min: MIN_PS_COGNITIVE,
+    max: MAX_PS_COGNITIVE,
+    step: 0.01,
+    decimals: 2,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Social',
+    model: psSocial,
+    min: MIN_PS_SOCIAL,
+    max: MAX_PS_SOCIAL,
+    step: 0.01,
+    decimals: 2,
+    useScientificNotation: true,
+  },
+];
+
+// Momentum-Based GD specific sliders
+const momentumSpecificSliders: SliderConfig[] = [
+  {
+    label: 'Learning Rate',
+    model: momentumLearningRate,
+    min: MIN_MOMENTUM_LEARNING_RATE,
+    max: MAX_MOMENTUM_LEARNING_RATE,
+    step: 0.0001,
+    decimals: 2,
+    logarithmic: true,
+    logMidpoint: 0.01,
+    useScientificNotation: true,
+  },
+  {
+    label: 'Momentum (Beta)',
+    model: momentumBeta,
+    min: MIN_MOMENTUM_BETA,
+    max: MAX_MOMENTUM_BETA,
+    step: 0.001,
+    decimals: 2,
+    useScientificNotation: true,
+  },
+];
+
 // Computed slider configs based on solution method
 const sliderConfigs = computed((): SliderConfig[] => {
-  if (solutionMethod.value === 'genetic') {
-    // Genetic: specific sliders, then common sliders at bottom
-    return [
-      ...geneticSpecificSliders,
-      ...commonSliderConfigs,
-      speedSliderConfig.value,
-      weightPenaltySliderConfig,
-    ];
-  } else if (solutionMethod.value === 'gradient') {
-    // Gradient: other specific sliders, learning rate, then common sliders at bottom
-    return [
-      ...gradientSpecificSliders.slice(1), // Stochasticity
-      gradientSpecificSliders[0], // Learning Rate (just above # Points)
-      ...commonSliderConfigs,
-      speedSliderConfig.value,
-      weightPenaltySliderConfig,
-    ];
-  } else {
-    // Adam: other specific sliders, learning rate, then common sliders at bottom
-    return [
-      ...adamSpecificSliders.slice(1), // Beta1, Beta2, Epsilon
-      adamSpecificSliders[0], // Learning Rate (just above # Points)
-      ...commonSliderConfigs,
-      speedSliderConfig.value,
-      weightPenaltySliderConfig,
-    ];
+  switch (solutionMethod.value) {
+    case 'genetic':
+      // Genetic: specific sliders, then common sliders at bottom
+      return [
+        ...geneticSpecificSliders,
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    case 'gradient':
+      // Gradient: other specific sliders, learning rate, then common sliders at bottom
+      return [
+        ...gradientSpecificSliders.slice(1), // Stochasticity
+        gradientSpecificSliders[0], // Learning Rate (just above # Points)
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    case 'adam':
+      // Adam: other specific sliders, learning rate, then common sliders at bottom
+      return [
+        ...adamSpecificSliders.slice(1), // Beta1, Beta2, Epsilon
+        adamSpecificSliders[0], // Learning Rate (just above # Points)
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    case 'simulated-annealing':
+      // Simulated Annealing: specific sliders, then common sliders at bottom
+      return [
+        ...saSpecificSliders,
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    case 'particle-swarm':
+      // Particle Swarm: specific sliders, then common sliders at bottom
+      return [
+        ...psSpecificSliders,
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    case 'momentum':
+      // Momentum: specific sliders, then common sliders at bottom
+      return [
+        momentumSpecificSliders[1], // Momentum (Beta)
+        momentumSpecificSliders[0], // Learning Rate (just above # Points)
+        ...commonSliderConfigs,
+        speedSliderConfig.value,
+        weightPenaltySliderConfig,
+      ];
+    default:
+      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
 });
 
@@ -418,39 +661,44 @@ const closeInfoModal = (): void => {
 };
 
 // Solution method state
-type SolutionMethod = 'genetic' | 'gradient' | 'adam';
+type SolutionMethod =
+  | 'genetic'
+  | 'gradient'
+  | 'adam'
+  | 'simulated-annealing'
+  | 'particle-swarm'
+  | 'momentum';
 const solutionMethod = ref<SolutionMethod>('genetic');
 
 const toggleSolutionMethod = (): void => {
-  // Cycle through: genetic -> gradient -> adam -> genetic
-  if (solutionMethod.value === 'genetic') {
-    solutionMethod.value = 'gradient';
-  } else if (solutionMethod.value === 'gradient') {
-    solutionMethod.value = 'adam';
-  } else {
-    solutionMethod.value = 'genetic';
+  // Cycle through all methods
+  switch (solutionMethod.value) {
+    case 'genetic':
+      solutionMethod.value = 'gradient';
+      break;
+    case 'gradient':
+      solutionMethod.value = 'adam';
+      break;
+    case 'adam':
+      solutionMethod.value = 'simulated-annealing';
+      break;
+    case 'simulated-annealing':
+      solutionMethod.value = 'particle-swarm';
+      break;
+    case 'particle-swarm':
+      solutionMethod.value = 'momentum';
+      break;
+    case 'momentum':
+      solutionMethod.value = 'genetic';
+      break;
+    default:
+      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
 
   stopEvolution();
-  if (solutionMethod.value === 'genetic') {
-    generateCurves();
-  } else {
-    generateSingleCurve();
-    // Reset Adam state when switching to Adam
-    if (solutionMethod.value === 'adam') {
-      adamM.value = [];
-      adamV.value = [];
-      adamT.value = 0;
-    }
-  }
+  resetCurrentAlgorithm();
   startEvolution();
 };
-
-const solutionMethodTitle = computed((): string => {
-  if (solutionMethod.value === 'genetic') return 'Genetic Algorithm';
-  if (solutionMethod.value === 'gradient') return 'Gradient Descent';
-  return 'Adam Optimizer';
-});
 
 // Computed: Get the first N points from allPoints based on slider
 const points = computed((): Point[] => {
@@ -500,6 +748,107 @@ const generateSingleCurve = (): void => {
     },
   ];
   updateFitness();
+};
+
+// Reset functions for each algorithm
+const resetGeneticAlgorithm = (): void => {
+  generateCurves();
+};
+
+const resetGradientDescent = (): void => {
+  generateSingleCurve();
+};
+
+const resetAdamOptimizer = (): void => {
+  adamM.value = [];
+  adamV.value = [];
+  adamT.value = 0;
+  generateSingleCurve();
+};
+
+const resetSimulatedAnnealing = (): void => {
+  saTemperature.value = saInitialTemp.value;
+  saCurrentBest.value = null;
+  saBestFitness.value = Infinity;
+  generateSingleCurve();
+};
+
+const resetParticleSwarm = (): void => {
+  psParticlesState.value = [];
+  psGlobalBestWeights.value = [];
+  psGlobalBestFitness.value = Infinity;
+  initializeParticleSwarm();
+};
+
+const resetMomentumGD = (): void => {
+  momentumV.value = [];
+  generateSingleCurve();
+};
+
+// Reset current algorithm
+const resetCurrentAlgorithm = (): void => {
+  switch (solutionMethod.value) {
+    case 'genetic':
+      resetGeneticAlgorithm();
+      break;
+    case 'gradient':
+      resetGradientDescent();
+      break;
+    case 'adam':
+      resetAdamOptimizer();
+      break;
+    case 'simulated-annealing':
+      resetSimulatedAnnealing();
+      break;
+    case 'particle-swarm':
+      resetParticleSwarm();
+      break;
+    case 'momentum':
+      resetMomentumGD();
+      break;
+    default:
+      throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+  }
+};
+
+// Reset all parameters to their defaults
+const resetParameters = (): void => {
+  const mobile = isMobile();
+
+  // Common parameters
+  numPoints.value = mobile ? DEFAULT_NUM_POINTS_MOBILE : DEFAULT_NUM_POINTS_DESKTOP;
+  numWeights.value = mobile ? DEFAULT_NUM_WEIGHTS_MOBILE : DEFAULT_NUM_WEIGHTS_DESKTOP;
+  generationsPerSec.value = mobile ? DEFAULT_GENERATIONS_PER_SEC_MOBILE : DEFAULT_GENERATIONS_PER_SEC_DESKTOP;
+  weightPenalty.value = mobile ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP;
+
+  // Genetic Algorithm parameters
+  numChildren.value = mobile ? DEFAULT_NUM_CHILDREN_MOBILE : DEFAULT_NUM_CHILDREN_DESKTOP;
+  mutationVariance.value = mobile ? DEFAULT_MUTATION_VARIANCE_MOBILE : DEFAULT_MUTATION_VARIANCE_DESKTOP;
+
+  // Gradient Descent parameters
+  learningRate.value = mobile ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP;
+  stochasticity.value = mobile ? DEFAULT_STOCHASTICITY_MOBILE : DEFAULT_STOCHASTICITY_DESKTOP;
+
+  // Adam Optimizer parameters
+  adamLearningRate.value = mobile ? DEFAULT_ADAM_LEARNING_RATE_MOBILE : DEFAULT_ADAM_LEARNING_RATE_DESKTOP;
+  adamBeta1.value = mobile ? DEFAULT_ADAM_BETA1_MOBILE : DEFAULT_ADAM_BETA1_DESKTOP;
+  adamBeta2.value = mobile ? DEFAULT_ADAM_BETA2_MOBILE : DEFAULT_ADAM_BETA2_DESKTOP;
+  adamEpsilon.value = mobile ? DEFAULT_ADAM_EPSILON_MOBILE : DEFAULT_ADAM_EPSILON_DESKTOP;
+
+  // Simulated Annealing parameters
+  saInitialTemp.value = mobile ? DEFAULT_SA_INITIAL_TEMP_MOBILE : DEFAULT_SA_INITIAL_TEMP_DESKTOP;
+  saCoolingRate.value = mobile ? DEFAULT_SA_COOLING_RATE_MOBILE : DEFAULT_SA_COOLING_RATE_DESKTOP;
+  saIterations.value = mobile ? DEFAULT_SA_ITERATIONS_MOBILE : DEFAULT_SA_ITERATIONS_DESKTOP;
+
+  // Particle Swarm parameters
+  psParticles.value = mobile ? DEFAULT_PS_PARTICLES_MOBILE : DEFAULT_PS_PARTICLES_DESKTOP;
+  psInertia.value = mobile ? DEFAULT_PS_INERTIA_MOBILE : DEFAULT_PS_INERTIA_DESKTOP;
+  psCognitive.value = mobile ? DEFAULT_PS_COGNITIVE_MOBILE : DEFAULT_PS_COGNITIVE_DESKTOP;
+  psSocial.value = mobile ? DEFAULT_PS_SOCIAL_MOBILE : DEFAULT_PS_SOCIAL_DESKTOP;
+
+  // Momentum-Based GD parameters
+  momentumLearningRate.value = mobile ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP;
+  momentumBeta.value = mobile ? DEFAULT_MOMENTUM_BETA_MOBILE : DEFAULT_MOMENTUM_BETA_DESKTOP;
 };
 
 // Generate normally distributed random number (Box-Muller transform)
@@ -680,6 +1029,214 @@ const adamStep = (): void => {
   updateFitness();
 };
 
+// Perform one Simulated Annealing step
+const simulatedAnnealingStep = (): void => {
+  if (curves.value.length === 0) return;
+
+  const curve: Curve = curves.value[0]!;
+
+  // Initialize if needed
+  if (saCurrentBest.value === null) {
+    saCurrentBest.value = [...curve.weights];
+    saBestFitness.value = curve.fitness;
+    saTemperature.value = saInitialTemp.value;
+  }
+
+  for (let iter = 0; iter < saIterations.value; iter++) {
+    // Generate neighbor solution by perturbing random weight
+    const newWeights: number[] = [...curve.weights];
+    const randomIndex: number = Math.floor(Math.random() * newWeights.length);
+    const perturbation: number = randomNormal(0, saTemperature.value);
+    newWeights[randomIndex] += perturbation;
+
+    // Evaluate new solution
+    const newCurve: Curve = { id: 0, weights: newWeights, fitness: 0 };
+    newCurve.fitness = calculateBaseFitness(newCurve);
+
+    // Calculate fitness with penalty
+    const currentFitness: number = calculateFitnessWithPenalty(curve);
+    const newFitness: number =
+      newCurve.fitness + calculateWeightPenalty(newCurve);
+
+    // Accept or reject based on Metropolis criterion
+    const delta: number = newFitness - currentFitness;
+    if (delta < 0 || Math.random() < Math.exp(-delta / saTemperature.value)) {
+      // Accept new solution
+      curve.weights = newWeights;
+      curve.fitness = newCurve.fitness;
+
+      // Update best if improved
+      if (newCurve.fitness < saBestFitness.value) {
+        saCurrentBest.value = [...newWeights];
+        saBestFitness.value = newCurve.fitness;
+      }
+    }
+  }
+
+  // Cool down temperature
+  saTemperature.value *= saCoolingRate.value;
+
+  updateFitness();
+};
+
+// Perform one Momentum-based Gradient Descent step
+const momentumStep = (): void => {
+  const gradients: number[] = [];
+
+  if (curves.value.length === 0) return;
+
+  const curve: Curve = curves.value[0]!;
+
+  // Initialize velocity if needed
+  if (momentumV.value.length !== curve.weights.length) {
+    momentumV.value = new Array(curve.weights.length).fill(0);
+  }
+
+  for (let i = 0; i < curve.weights.length; i++) {
+    gradients.push(0);
+  }
+
+  // Calculate gradients for each weight
+  for (const point of points.value) {
+    const predicted: number = evaluateCurve(curve, point.x);
+    const error: number = predicted - point.y;
+
+    // Gradient for each weight: d(MSE)/d(w_i) = 2 * error * x^i / n
+    for (let i: number = 0; i < gradients.length; i++) {
+      gradients[i] += (2 * error * Math.pow(point.x, i)) / points.value.length;
+    }
+  }
+
+  // Add L2 regularization gradient
+  if (weightPenalty.value > 0) {
+    for (let i: number = 0; i < curve.weights.length; i++) {
+      gradients[i] += 2 * weightPenalty.value * curve.weights[i];
+    }
+  }
+
+  // Update weights using momentum
+  curve.weights = curve.weights.map((weight: number, i: number): number => {
+    // Update velocity: v = beta * v + learning_rate * gradient
+    momentumV.value[i] =
+      momentumBeta.value * momentumV.value[i] +
+      momentumLearningRate.value * gradients[i];
+
+    // Update weight: w = w - v
+    return weight - momentumV.value[i];
+  });
+
+  updateFitness();
+};
+
+// Initialize particle swarm
+const initializeParticleSwarm = (): void => {
+  psParticlesState.value = Array.from(
+    { length: psParticles.value },
+    (_value: unknown, i: number): Particle => {
+      // Initialize weights with small random values for diversity
+      const weights: number[] = Array.from(
+        { length: numWeights.value },
+        () => randomNormal(0, 0.1) // Small random values around 0
+      );
+      // Initialize velocity with small random values
+      const velocity: number[] = Array.from(
+        { length: numWeights.value },
+        () => randomNormal(0, 0.01) // Small random velocities
+      );
+      return {
+        weights: weights,
+        velocity: velocity,
+        bestWeights: [...weights],
+        bestFitness: Infinity,
+      };
+    }
+  );
+
+  psGlobalBestWeights.value = [];
+  psGlobalBestFitness.value = Infinity;
+
+  // Evaluate initial particles
+  psParticlesState.value.forEach((particle: Particle): void => {
+    const curve: Curve = { id: 0, weights: particle.weights, fitness: 0 };
+    curve.fitness = calculateBaseFitness(curve);
+    const fitness: number = curve.fitness + calculateWeightPenalty(curve);
+
+    particle.bestFitness = fitness;
+
+    if (fitness < psGlobalBestFitness.value) {
+      psGlobalBestFitness.value = fitness;
+      psGlobalBestWeights.value = [...particle.weights];
+    }
+  });
+
+  // Update curves for display
+  updateParticleSwarmCurves();
+};
+
+// Update curves from particles for display
+const updateParticleSwarmCurves = (): void => {
+  curves.value = psParticlesState.value.map(
+    (particle: Particle, i: number): Curve => ({
+      id: i,
+      weights: particle.weights,
+      fitness: calculateBaseFitness({
+        id: 0,
+        weights: particle.weights,
+        fitness: 0,
+      }),
+    })
+  );
+};
+
+// Perform one Particle Swarm Optimization step
+const particleSwarmStep = (): void => {
+  if (psParticlesState.value.length === 0) {
+    initializeParticleSwarm();
+    return;
+  }
+
+  psParticlesState.value.forEach((particle: Particle): void => {
+    // Update velocity and position for each weight
+    for (let i: number = 0; i < particle.weights.length; i++) {
+      const r1: number = Math.random();
+      const r2: number = Math.random();
+
+      // Update velocity
+      particle.velocity[i] =
+        psInertia.value * particle.velocity[i] +
+        psCognitive.value *
+          r1 *
+          (particle.bestWeights[i] - particle.weights[i]) +
+        psSocial.value *
+          r2 *
+          (psGlobalBestWeights.value[i] - particle.weights[i]);
+
+      // Update position
+      particle.weights[i] += particle.velocity[i];
+    }
+
+    // Evaluate new position
+    const curve: Curve = { id: 0, weights: particle.weights, fitness: 0 };
+    curve.fitness = calculateBaseFitness(curve);
+    const fitness: number = curve.fitness + calculateWeightPenalty(curve);
+
+    // Update personal best
+    if (fitness < particle.bestFitness) {
+      particle.bestFitness = fitness;
+      particle.bestWeights = [...particle.weights];
+    }
+
+    // Update global best
+    if (fitness < psGlobalBestFitness.value) {
+      psGlobalBestFitness.value = fitness;
+      psGlobalBestWeights.value = [...particle.weights];
+    }
+  });
+
+  // Update curves for display
+  updateParticleSwarmCurves();
+};
+
 // Generate curves by mutating the best curve
 // Index 0 = exact copy, last index = maximum variance
 const generateCurvesFromBest = (): void => {
@@ -747,28 +1304,34 @@ const animationLoop = (currentTime: number): void => {
   const deltaTime: number = (currentTime - lastFrameTime) / 1000; // Convert to seconds
   lastFrameTime = currentTime;
 
-  if (solutionMethod.value === 'genetic') {
-    // Accumulate generations to run based on desired rate
-    generationAccumulator += deltaTime * generationsPerSec.value;
+  // Accumulate iterations to run based on desired rate
+  generationAccumulator += deltaTime * generationsPerSec.value;
 
-    // Run as many generations as accumulated (can be 0, 1, or multiple)
-    while (generationAccumulator >= 1) {
-      generateCurvesFromBest();
-      generationAccumulator -= 1;
-    }
-  } else {
-    // Gradient descent or Adam mode
-    generationAccumulator += deltaTime * generationsPerSec.value;
-
-    // Run as many iterations as accumulated
-    while (generationAccumulator >= 1) {
-      if (solutionMethod.value === 'gradient') {
+  // Run as many iterations as accumulated (can be 0, 1, or multiple)
+  while (generationAccumulator >= 1) {
+    switch (solutionMethod.value) {
+      case 'genetic':
+        generateCurvesFromBest();
+        break;
+      case 'gradient':
         gradientDescentStep();
-      } else {
+        break;
+      case 'adam':
         adamStep();
-      }
-      generationAccumulator -= 1;
+        break;
+      case 'simulated-annealing':
+        simulatedAnnealingStep();
+        break;
+      case 'particle-swarm':
+        particleSwarmStep();
+        break;
+      case 'momentum':
+        momentumStep();
+        break;
+      default:
+        throw new Error(`Unknown solution method: ${solutionMethod.value}`);
     }
+    generationAccumulator -= 1;
   }
 
   // Draw the canvas
@@ -912,7 +1475,7 @@ const toCoordSystemCoords = (cx: number, cy: number): CoordSystemCoords => {
 
 // Get color for curve based on rank
 const getCurveColor = (index: number): string => {
-  return index === 0 ? getBestCurveColor() : OTHER_CURVE_COLOR;
+  return index === 0 ? getAlgoColor() : OTHER_CURVE_COLOR;
 };
 
 // Find point at given canvas position (returns index or null)
@@ -1155,7 +1718,7 @@ const draw = (): void => {
   points.value.forEach((point: Point): void => {
     const coords: CanvasCoords = toCanvasCoords(point.x, point.y);
 
-    ctx.fillStyle = getDotColor();
+    ctx.fillStyle = POINTS_DARK_GRAY;
     ctx.beginPath();
     ctx.arc(coords.cx, coords.cy, POINT_RADIUS, 0, Math.PI * 2);
     ctx.fill();
@@ -1194,9 +1757,12 @@ const draw = (): void => {
 
   // Display fitness in top-right corner
   if (bestCurve !== null) {
-    const fitnessText: string = `Fitness: ${formatScientific(bestCurve.fitness, 2)}`;
+    const fitnessText: string = `Fitness: ${formatScientific(
+      bestCurve.fitness,
+      10
+    )}`;
     ctx.font = '14px monospace';
-    ctx.fillStyle = getDotColor();
+    ctx.fillStyle = getAlgoColor();
     ctx.textAlign = 'right';
     ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING + 15);
     ctx.textAlign = 'left'; // Reset to default
@@ -1215,6 +1781,8 @@ onMounted((): void => {
   generateRandomPoints();
   if (solutionMethod.value === 'genetic') {
     generateCurves();
+  } else if (solutionMethod.value === 'particle-swarm') {
+    initializeParticleSwarm();
   } else {
     generateSingleCurve();
   }
@@ -1248,8 +1816,18 @@ watch(numWeights, (): void => {
 
 // Regenerate curves when numChildren changes
 watch(numChildren, (): void => {
-  if (curves.value.length > 0) {
+  if (curves.value.length > 0 && solutionMethod.value === 'genetic') {
     generateCurves();
+  }
+});
+
+// Regenerate swarm when psParticles changes
+watch(psParticles, (): void => {
+  if (
+    solutionMethod.value === 'particle-swarm' &&
+    psParticlesState.value.length > 0
+  ) {
+    initializeParticleSwarm();
   }
 });
 </script>
@@ -1277,7 +1855,7 @@ watch(numChildren, (): void => {
           :logarithmic="config.logarithmic"
           :logMidpoint="config.logMidpoint"
           :useScientificNotation="config.useScientificNotation"
-          :thumbColor="getDotColor()"
+          :thumbColor="getAlgoColor()"
         />
       </div>
 
@@ -1297,7 +1875,7 @@ watch(numChildren, (): void => {
           :logarithmic="config.logarithmic"
           :logMidpoint="config.logMidpoint"
           :useScientificNotation="config.useScientificNotation"
-          :thumbColor="getDotColor()"
+          :thumbColor="getAlgoColor()"
         />
       </div>
 
@@ -1314,50 +1892,74 @@ watch(numChildren, (): void => {
         <button
           @click="toggleSolutionMethod"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px text-center flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getDotColor() }"
-          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-          :title="`Switch to ${
-            solutionMethod === 'genetic'
-              ? 'Gradient Descent'
-              : 'Genetic Algorithm'
-          }`"
+          :style="{ backgroundColor: getAlgoColor() }"
+          @mouseover="
+            ($event.currentTarget as HTMLElement).style.filter =
+              'brightness(0.9)'
+          "
+          @mouseout="
+            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
+          "
+          title="Switch optimization method"
         >
           <span v-if="solutionMethod === 'genetic'">Genetic</span>
           <span v-else-if="solutionMethod === 'gradient'">Gradient</span>
-          <span v-else>Adam</span>
+          <span v-else-if="solutionMethod === 'adam'">Adam</span>
+          <span v-else-if="solutionMethod === 'simulated-annealing'"
+            >Simulated</span
+          >
+          <span v-else-if="solutionMethod === 'particle-swarm'">Particle</span>
+          <span v-else>Momentum-Based</span>
           <span v-if="solutionMethod === 'genetic'">Algorithm</span>
           <span v-else-if="solutionMethod === 'gradient'">Descent</span>
-          <span v-else>Optimizer</span>
+          <span v-else-if="solutionMethod === 'adam'">Optimizer</span>
+          <span v-else-if="solutionMethod === 'simulated-annealing'"
+            >Annealing</span
+          >
+          <span v-else-if="solutionMethod === 'particle-swarm'">Swarm</span>
+          <span v-else>GD</span>
         </button>
         <button
-          v-if="solutionMethod === 'genetic'"
-          @click="generateCurves"
+          @click="resetCurrentAlgorithm"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getDotColor() }"
-          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+          :style="{ backgroundColor: getAlgoColor() }"
+          @mouseover="
+            ($event.currentTarget as HTMLElement).style.filter =
+              'brightness(0.9)'
+          "
+          @mouseout="
+            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
+          "
         >
-          <span>New</span>
-          <span>Curves</span>
+          <span>Reset</span>
+          <span>Algorithm</span>
         </button>
         <button
-          v-else
-          @click="generateSingleCurve"
+          @click="resetParameters"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getDotColor() }"
-          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+          :style="{ backgroundColor: getAlgoColor() }"
+          @mouseover="
+            ($event.currentTarget as HTMLElement).style.filter =
+              'brightness(0.9)'
+          "
+          @mouseout="
+            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
+          "
         >
-          <span>New</span>
-          <span>Curve</span>
+          <span>Reset</span>
+          <span>Parameters</span>
         </button>
         <button
           @click="generateRandomPoints"
           class="flex-1 py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all active:translate-y-px flex flex-col items-center justify-center"
-          :style="{ backgroundColor: getDotColor() }"
-          @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-          @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+          :style="{ backgroundColor: POINTS_DARK_GRAY }"
+          @mouseover="
+            ($event.currentTarget as HTMLElement).style.filter =
+              'brightness(0.9)'
+          "
+          @mouseout="
+            ($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'
+          "
         >
           <span>New</span>
           <span>Points</span>
@@ -1403,7 +2005,9 @@ watch(numChildren, (): void => {
           :key="curve.id"
           class="flex flex-1 font-mono text-xs transition-colors"
           :class="
-            index === 0 || solutionMethod === 'gradient'
+            index === 0 ||
+            (solutionMethod !== 'genetic' &&
+              solutionMethod !== 'particle-swarm')
               ? 'bg-ui-bg-highlight'
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
