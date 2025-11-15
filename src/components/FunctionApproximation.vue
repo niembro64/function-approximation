@@ -62,7 +62,7 @@ const ALGO_GRADIENT_DESCENT: string = TAILWIND_BLUE_500;
 const ALGO_MOMENTUM_BASED_GD: string = TAILWIND_INDIGO_500;
 const ALGO_ADAM_OPTIMIZER: string = TAILWIND_VIOLET_500;
 const ALGO_SIMULATED_ANNEALING: string = TAILWIND_YELLOW_600;
-const ALGO_POLYNOMIAL_SOLVER: string = POINTS_GRAY;
+const ALGO_POLYNOMIAL_SOLVER: string = TAILWIND_PINK_500;
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
@@ -587,53 +587,50 @@ const momentumSpecificSliders: SliderConfig[] = [
 const sliderConfigs = computed((): SliderConfig[] => {
   switch (solutionMethod.value) {
     case 'genetic':
-      // Genetic: specific sliders, then common sliders at bottom
+      // Genetic: common sliders first, then specific sliders, then speed/penalty
       return [
-        ...geneticSpecificSliders,
         ...commonSliderConfigs,
+        ...geneticSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
     case 'gradient':
-      // Gradient: other specific sliders, learning rate, then common sliders at bottom
+      // Gradient: common sliders first, then specific sliders, then speed/penalty
       return [
-        ...gradientSpecificSliders.slice(1), // Stochasticity
-        gradientSpecificSliders[0], // Learning Rate (just above # Points)
         ...commonSliderConfigs,
+        ...gradientSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
     case 'adam':
-      // Adam: other specific sliders, learning rate, then common sliders at bottom
+      // Adam: common sliders first, then specific sliders, then speed/penalty
       return [
-        ...adamSpecificSliders.slice(1), // Beta1, Beta2, Epsilon
-        adamSpecificSliders[0], // Learning Rate (just above # Points)
         ...commonSliderConfigs,
+        ...adamSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
     case 'simulated-annealing':
-      // Simulated Annealing: specific sliders, then common sliders at bottom
+      // Simulated Annealing: common sliders first, then specific sliders, then speed/penalty
       return [
-        ...saSpecificSliders,
         ...commonSliderConfigs,
+        ...saSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
     case 'particle-swarm':
-      // Particle Swarm: specific sliders, then common sliders at bottom
+      // Particle Swarm: common sliders first, then specific sliders, then speed/penalty
       return [
-        ...psSpecificSliders,
         ...commonSliderConfigs,
+        ...psSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
     case 'momentum':
-      // Momentum: specific sliders, then common sliders at bottom
+      // Momentum: common sliders first, then specific sliders, then speed/penalty
       return [
-        momentumSpecificSliders[1], // Momentum (Beta)
-        momentumSpecificSliders[0], // Learning Rate (just above # Points)
         ...commonSliderConfigs,
+        ...momentumSpecificSliders,
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
@@ -1816,21 +1813,6 @@ const draw = (): void => {
     solutionMethod.value === 'polynomial-solver' &&
     numPoints.value > numWeights.value;
 
-  // If no solution, display message and skip curve drawing
-  if (hasNoSolution) {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 24px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const centerX: number = CANVAS_SIZE.value / 2;
-    const centerY: number = CANVAS_SIZE.value / 2;
-    ctx.fillText('No Solution', centerX, centerY - 12);
-    ctx.font = '14px monospace';
-    ctx.fillText('(More points than coefficients)', centerX, centerY + 12);
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-  }
-
   // Draw all polynomial curves (worst to best so best is on top)
   if (!hasNoSolution) {
     sortedCurves.value
@@ -1939,6 +1921,21 @@ const draw = (): void => {
       ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING - 10);
       ctx.textAlign = 'left'; // Reset to default
     }
+  }
+
+  // Draw "No Solution" message on top of everything if needed
+  if (hasNoSolution) {
+    ctx.fillStyle = TAILWIND_PINK_500;
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const centerX: number = CANVAS_SIZE.value / 2;
+    const centerY: number = CANVAS_SIZE.value / 2;
+    ctx.fillText('No Solution', centerX, centerY - 12);
+    ctx.font = '14px monospace';
+    ctx.fillText('(More points than coefficients)', centerX, centerY + 12);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   }
 };
 
