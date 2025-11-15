@@ -734,6 +734,8 @@ const toggleSolutionMethod = (): void => {
   const nextIndex = (currentIndex + 1) % ALGORITHM_ORDER.length;
   solutionMethod.value = ALGORITHM_ORDER[nextIndex];
 
+  console.log('🔄 Switching to algorithm:', solutionMethod.value);
+
   stopEvolution();
   resetCurrentAlgorithm();
   startEvolution();
@@ -833,14 +835,17 @@ const resetPolynomialSolver = (): void => {
 };
 
 const resetRandomSearch = (): void => {
-  // Generate single initial curve (will be improved by randomSearchStep)
-  curves.value = [
-    {
-      id: 0,
+  // Generate initial set of random curves (global best + random candidates)
+  const initialCurves: Curve[] = Array.from(
+    { length: rsCurves.value + 1 }, // +1 for the global best
+    (_value: unknown, i: number): Curve => ({
+      id: i,
       weights: Array.from({ length: numWeights.value }, (): number => randomNormal(0, 1)),
       fitness: 0,
-    }
-  ];
+    })
+  );
+  curves.value = initialCurves;
+  console.log('Random Search RESET - Created curves:', curves.value.length, '(should be', rsCurves.value + 1, ')');
   updateFitness();
 };
 
@@ -1336,7 +1341,11 @@ const momentumStep = (): void => {
 
 // Perform one Random Search step
 const randomSearchStep = (): void => {
-  if (curves.value.length === 0) return;
+  console.log('🔍 randomSearchStep CALLED - curves.length:', curves.value.length, 'rsCurves:', rsCurves.value);
+  if (curves.value.length === 0) {
+    console.log('❌ randomSearchStep EARLY RETURN - no curves!');
+    return;
+  }
 
   // Get current best
   const currentBest: Curve = curves.value[0];
@@ -1373,11 +1382,30 @@ const randomSearchStep = (): void => {
     }
   }
 
-  // Keep the better of current best vs best candidate
+  // Update global best if we found something better
+  let globalBest: Curve;
   if (bestCandidateFitness < currentBestFitness) {
-    curves.value = [{ id: 0, weights: [...bestCandidate.weights], fitness: bestCandidate.fitness }];
+    // New global best found!
+    globalBest = { id: 0, weights: [...bestCandidate.weights], fitness: bestCandidate.fitness };
+  } else {
+    // Keep current global best
+    globalBest = { id: 0, weights: [...currentBest.weights], fitness: currentBest.fitness };
   }
-  // else: keep current best (curves.value stays unchanged)
+
+  // Re-ID the random candidates to start from 1 (0 is reserved for global best)
+  randomCandidates.forEach((candidate: Curve, index: number): void => {
+    candidate.id = index + 1;
+  });
+
+  // Display: global best first (cyan/highlighted), then all random candidates (gray)
+  // Build new array to ensure reactivity
+  const newCurves: Curve[] = [globalBest];
+  randomCandidates.forEach((candidate: Curve): void => {
+    newCurves.push(candidate);
+  });
+  curves.value = newCurves;
+
+  console.log('Random Search - Total curves:', curves.value.length, '(1 global best + ' + rsCurves.value + ' random)');
 };
 
 // Initialize particle swarm
@@ -1581,6 +1609,7 @@ const animationLoop = (currentTime: number): void => {
         momentumStep();
         break;
       case 'random-search':
+        console.log('⚡ Animation loop calling randomSearchStep');
         randomSearchStep();
         break;
       case 'polynomial-solver':
@@ -2355,7 +2384,8 @@ watch(rsCurves, (): void => {
           :class="
             index === 0 ||
             (solutionMethod !== 'genetic' &&
-              solutionMethod !== 'particle-swarm')
+              solutionMethod !== 'particle-swarm' &&
+              solutionMethod !== 'random-search')
               ? 'bg-ui-bg-highlight'
               : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
           "
