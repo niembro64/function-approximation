@@ -235,7 +235,7 @@ const CURVE_HORIZONTAL_OVERDRAW: number = 1.0; // Extend curve drawing beyond vi
 // Canvas Dimensions
 const CANVAS_SIZE = ref<number>(500);
 const CANVAS_SCALE: number = 2; // Render at 2x resolution for crisp display
-const PADDING: number = 40;
+const PADDING: number = 25;
 const MIN_CANVAS_SIZE: number = 350;
 const MIN_CANVAS_SIZE_MOBILE: number = 280;
 const VIEWPORT_HEIGHT_OFFSET: number = 60;
@@ -246,7 +246,7 @@ const MOBILE_BREAKPOINT: number = 768; // px
 
 // Curve Drawing Resolution
 const PRIMARY_CURVE_RESOLUTION: number = 300; // Number of points for best curve (higher = smoother)
-const AUXILIARY_CURVE_RESOLUTION: number = 50; // Number of points for auxiliary curves (genetic children, particle swarm particles)
+const AUXILIARY_CURVE_RESOLUTION: number = 80; // Number of points for auxiliary curves (genetic children, particle swarm particles)
 
 // Error Bars
 const ERROR_BAR_LINE_WIDTH: number = 3;
@@ -1933,8 +1933,8 @@ const draw = (): void => {
       )}`;
       ctx.font = '14px monospace';
       ctx.fillStyle = '#ffffff'; // Always white
-      ctx.textAlign = 'right';
-      ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING - 10);
+      ctx.textAlign = 'center';
+      ctx.fillText(fitnessText, CANVAS_SIZE.value / 2, PADDING - 10);
       ctx.textAlign = 'left'; // Reset to default
     }
   }
@@ -2080,11 +2080,11 @@ watch(psParticles, (): void => {
             aria-label="Information"
             title="Learn more about this project"
           >
-            <span class="text-base md:text-sm font-bold">i</span>
+            <span class="text-lg md:text-base font-bold">i</span>
           </button>
           <button
             @click="toggleSolutionMethod"
-            class="flex-1 py-3 md:py-2 px-2 text-sm md:text-base font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
+            class="flex-1 py-3 md:py-2 px-2 text-base md:text-lg font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
             :style="{ backgroundColor: getAlgoColor() }"
             @mouseover="
               ($event.currentTarget as HTMLElement).style.filter =
