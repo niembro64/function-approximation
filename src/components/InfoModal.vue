@@ -49,8 +49,8 @@ const handleBackdropClick = (event: MouseEvent): void => {
             <section>
               <h3 class="text-xl font-bold text-white mb-2">Overview</h3>
               <p>
-                This project demonstrates six different optimization algorithms for approximating data points with polynomial functions.
-                Each algorithm continuously improves its solution by minimizing the error between predicted and actual values.
+                This project demonstrates seven different optimization algorithms for approximating data points with polynomial functions.
+                Six algorithms iteratively optimize to minimize error, while one provides the exact algebraic solution.
                 Click the algorithm button to cycle through and compare their performance.
               </p>
             </section>
@@ -165,6 +165,20 @@ const handleBackdropClick = (event: MouseEvent): void => {
                     <li><strong>Perturbation:</strong> Randomly modifies one weight per iteration</li>
                     <li><strong>Acceptance:</strong> Always accepts better solutions; accepts worse with probability e^(-ΔE/T)</li>
                     <li><strong>Parameters:</strong> Initial Temperature, Cooling Rate, Iterations</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 class="font-bold mb-1 text-base" style="color: #ec4899">Polynomial Solver</h4>
+                  <p class="mb-2">
+                    Exact algebraic solution using linear algebra - solves the Vandermonde system to find the unique polynomial passing through the points.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-sm">
+                    <li><strong>Exact Solution:</strong> Finds the exact polynomial when # coefficients ≤ # points</li>
+                    <li><strong>Gaussian Elimination:</strong> Uses row reduction with partial pivoting to solve the linear system</li>
+                    <li><strong>Vandermonde Matrix:</strong> Constructs A[i][j] = xᵢʲ to represent the polynomial basis</li>
+                    <li><strong>No Solution:</strong> Displays message when more points than coefficients (overdetermined system)</li>
+                    <li><strong>Parameters:</strong> None (solution is deterministic given the data)</li>
                   </ul>
                 </div>
               </div>

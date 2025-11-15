@@ -51,8 +51,10 @@ const TAILWIND_GREEN_600: string = '#16a34a';
 const TAILWIND_LIME_700: string = '#65a30d';
 const TAILWIND_EMERALD_600: string = '#059669';
 const TAILWIND_YELLOW_600: string = '#ca8a04';
+const TAILWIND_PINK_500: string = '#ec4899';
 const TAILWIND_RED_500: string = '#fb2c36';
 const POINTS_DARK_GRAY: string = '#4a4a4a'; // Dark gray for points/data
+const POINTS_GRAY: string = '#888888'; // Gray for points/data
 
 const ALGO_GENETIC_ALGORITHM: string = TAILWIND_LIME_700;
 const ALGO_PARTICLE_SWARM: string = TAILWIND_EMERALD_600;
@@ -60,17 +62,18 @@ const ALGO_GRADIENT_DESCENT: string = TAILWIND_BLUE_500;
 const ALGO_MOMENTUM_BASED_GD: string = TAILWIND_INDIGO_500;
 const ALGO_ADAM_OPTIMIZER: string = TAILWIND_VIOLET_500;
 const ALGO_SIMULATED_ANNEALING: string = TAILWIND_YELLOW_600;
+const ALGO_POLYNOMIAL_SOLVER: string = POINTS_GRAY;
 
 // Slider Ranges
 const MIN_POINTS: number = 1;
-const MAX_POINTS: number = 16;
+const MAX_POINTS: number = 24;
 const DEFAULT_NUM_POINTS_DESKTOP: number = 5;
 const DEFAULT_NUM_POINTS_MOBILE: number = 5;
 
 const MIN_WEIGHTS: number = 1;
-const MAX_WEIGHTS: number = 36;
-const DEFAULT_NUM_WEIGHTS_DESKTOP: number = 16;
-const DEFAULT_NUM_WEIGHTS_MOBILE: number = 16;
+const MAX_WEIGHTS: number = 24;
+const DEFAULT_NUM_WEIGHTS_DESKTOP: number = 5;
+const DEFAULT_NUM_WEIGHTS_MOBILE: number = 5;
 
 const MIN_CHILDREN: number = 2;
 const MAX_CHILDREN: number = 64;
@@ -190,6 +193,8 @@ const getAlgoColor = (): string => {
       return ALGO_PARTICLE_SWARM;
     case 'momentum':
       return ALGO_MOMENTUM_BASED_GD;
+    case 'polynomial-solver':
+      return ALGO_POLYNOMIAL_SOLVER;
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
@@ -632,6 +637,9 @@ const sliderConfigs = computed((): SliderConfig[] => {
         speedSliderConfig.value,
         weightPenaltySliderConfig,
       ];
+    case 'polynomial-solver':
+      // Polynomial Solver: only common sliders (no optimization parameters needed)
+      return [...commonSliderConfigs];
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
@@ -659,7 +667,8 @@ type SolutionMethod =
   | 'adam'
   | 'simulated-annealing'
   | 'particle-swarm'
-  | 'momentum';
+  | 'momentum'
+  | 'polynomial-solver';
 // Algorithm order when clicking through
 const ALGORITHM_ORDER: SolutionMethod[] = [
   'genetic',
@@ -668,6 +677,7 @@ const ALGORITHM_ORDER: SolutionMethod[] = [
   'momentum',
   'adam',
   'simulated-annealing',
+  'polynomial-solver',
 ];
 
 const solutionMethod = ref<SolutionMethod>('genetic');
@@ -773,6 +783,12 @@ const resetMomentumGD = (): void => {
   generateSingleCurve();
 };
 
+const resetPolynomialSolver = (): void => {
+  generateSingleCurve();
+  // Solve immediately instead of waiting for animation loop
+  solvePolynomialExact();
+};
+
 // Reset current algorithm
 const resetCurrentAlgorithm = (): void => {
   switch (solutionMethod.value) {
@@ -793,6 +809,9 @@ const resetCurrentAlgorithm = (): void => {
       break;
     case 'momentum':
       resetMomentumGD();
+      break;
+    case 'polynomial-solver':
+      resetPolynomialSolver();
       break;
     default:
       throw new Error(`Unknown solution method: ${solutionMethod.value}`);
@@ -1109,6 +1128,102 @@ const simulatedAnnealingStep = (): void => {
   updateFitness();
 };
 
+// Gaussian elimination with partial pivoting to solve linear system Ax = b
+const gaussianElimination = (A: number[][], b: number[]): number[] | null => {
+  const n = A.length;
+  // Create augmented matrix
+  const aug: number[][] = A.map((row, i) => [...row, b[i]]);
+
+  // Forward elimination with partial pivoting
+  for (let k = 0; k < n; k++) {
+    // Find pivot
+    let maxRow = k;
+    for (let i = k + 1; i < n; i++) {
+      if (Math.abs(aug[i][k]) > Math.abs(aug[maxRow][k])) {
+        maxRow = i;
+      }
+    }
+
+    // Swap rows
+    [aug[k], aug[maxRow]] = [aug[maxRow], aug[k]];
+
+    // Check for singular matrix
+    if (Math.abs(aug[k][k]) < 1e-10) {
+      return null;
+    }
+
+    // Eliminate column k
+    for (let i = k + 1; i < n; i++) {
+      const factor = aug[i][k] / aug[k][k];
+      for (let j = k; j <= n; j++) {
+        aug[i][j] -= factor * aug[k][j];
+      }
+    }
+  }
+
+  // Back substitution
+  const x: number[] = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = aug[i][n];
+    for (let j = i + 1; j < n; j++) {
+      x[i] -= aug[i][j] * x[j];
+    }
+    x[i] /= aug[i][i];
+  }
+
+  return x;
+};
+
+// Solve polynomial exactly using linear algebra (Vandermonde system)
+const solvePolynomialExact = (): void => {
+  if (curves.value.length === 0) return;
+  const curve: Curve = curves.value[0]!;
+
+  // If more points than weights, no unique solution exists
+  if (numPoints.value > numWeights.value) {
+    // Will display "no solution" message in canvas
+    return;
+  }
+
+  // Use min(numPoints, numWeights) points to solve
+  const n = Math.min(numPoints.value, numWeights.value);
+  const pointsToUse = points.value.slice(0, n);
+
+  // Build Vandermonde matrix A and vector b
+  // A[i][j] = x_i^j (x to the power j)
+  // b[i] = y_i
+  const A: number[][] = [];
+  const b: number[] = [];
+
+  for (let i = 0; i < n; i++) {
+    const row: number[] = [];
+    for (let j = 0; j < n; j++) {
+      row.push(Math.pow(pointsToUse[i].x, j));
+    }
+    A.push(row);
+    b.push(pointsToUse[i].y);
+  }
+
+  // Solve Ax = b using Gaussian elimination
+  const solution = gaussianElimination(A, b);
+
+  if (solution !== null) {
+    // Set the weights from solution
+    for (let i = 0; i < numWeights.value; i++) {
+      if (i < n) {
+        curve.weights[i] = solution[i];
+      } else {
+        // Set extra weights to zero
+        curve.weights[i] = 0;
+      }
+    }
+
+    curve.fitness = calculateBaseFitness(curve);
+  }
+
+  updateFitness();
+};
+
 // Perform one Momentum-based Gradient Descent step
 const momentumStep = (): void => {
   const gradients: number[] = [];
@@ -1357,6 +1472,9 @@ const animationLoop = (currentTime: number): void => {
         break;
       case 'momentum':
         momentumStep();
+        break;
+      case 'polynomial-solver':
+        solvePolynomialExact();
         break;
       default:
         throw new Error(`Unknown solution method: ${solutionMethod.value}`);
@@ -1693,55 +1811,77 @@ const draw = (): void => {
   ctx.lineTo(originCoords.cx, CANVAS_SIZE.value - PADDING);
   ctx.stroke();
 
+  // Check if polynomial solver has no solution
+  const hasNoSolution: boolean =
+    solutionMethod.value === 'polynomial-solver' &&
+    numPoints.value > numWeights.value;
+
+  // If no solution, display message and skip curve drawing
+  if (hasNoSolution) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const centerX: number = CANVAS_SIZE.value / 2;
+    const centerY: number = CANVAS_SIZE.value / 2;
+    ctx.fillText('No Solution', centerX, centerY - 12);
+    ctx.font = '14px monospace';
+    ctx.fillText('(More points than coefficients)', centerX, centerY + 12);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
   // Draw all polynomial curves (worst to best so best is on top)
-  sortedCurves.value
-    .slice()
-    .reverse()
-    .forEach((curve: Curve, index: number): void => {
-      const rankIndex: number = sortedCurves.value.length - 1 - index;
-      ctx.strokeStyle = getCurveColor(rankIndex);
-      ctx.lineWidth =
-        rankIndex === 0 ? BEST_CURVE_LINE_WIDTH : OTHER_CURVE_LINE_WIDTH;
-      ctx.globalAlpha = rankIndex === 0 ? 1.0 : OTHER_CURVE_OPACITY;
-      ctx.beginPath();
+  if (!hasNoSolution) {
+    sortedCurves.value
+      .slice()
+      .reverse()
+      .forEach((curve: Curve, index: number): void => {
+        const rankIndex: number = sortedCurves.value.length - 1 - index;
+        ctx.strokeStyle = getCurveColor(rankIndex);
+        ctx.lineWidth =
+          rankIndex === 0 ? BEST_CURVE_LINE_WIDTH : OTHER_CURVE_LINE_WIDTH;
+        ctx.globalAlpha = rankIndex === 0 ? 1.0 : OTHER_CURVE_OPACITY;
+        ctx.beginPath();
 
-      // Extend drawing range horizontally beyond visible area
-      const drawMin: number = COORD_MIN - CURVE_HORIZONTAL_OVERDRAW;
-      const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
-      const range: number = drawMax - drawMin;
+        // Extend drawing range horizontally beyond visible area
+        const drawMin: number = COORD_MIN - CURVE_HORIZONTAL_OVERDRAW;
+        const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
+        const range: number = drawMax - drawMin;
 
-      for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
-        const x: number = drawMin + (i / CURVE_RESOLUTION) * range;
-        const y: number = evaluateCurve(curve, x);
-        const coords: CanvasCoords = toCanvasCoords(x, y);
+        for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
+          const x: number = drawMin + (i / CURVE_RESOLUTION) * range;
+          const y: number = evaluateCurve(curve, x);
+          const coords: CanvasCoords = toCanvasCoords(x, y);
 
-        if (i === 0) {
-          ctx.moveTo(coords.cx, coords.cy);
-        } else {
-          ctx.lineTo(coords.cx, coords.cy);
+          if (i === 0) {
+            ctx.moveTo(coords.cx, coords.cy);
+          } else {
+            ctx.lineTo(coords.cx, coords.cy);
+          }
         }
-      }
-      ctx.stroke();
-    });
+        ctx.stroke();
+      });
 
-  ctx.globalAlpha = 1.0;
+    ctx.globalAlpha = 1.0;
 
-  // Draw error bars from points to best fit curve
-  const bestCurve: Curve | null = getBestCurve();
-  if (bestCurve !== null) {
-    ctx.strokeStyle = COLOR_ERROR_BARS;
-    ctx.lineWidth = ERROR_BAR_LINE_WIDTH;
+    // Draw error bars from points to best fit curve
+    const bestCurve: Curve | null = getBestCurve();
+    if (bestCurve !== null) {
+      ctx.strokeStyle = COLOR_ERROR_BARS;
+      ctx.lineWidth = ERROR_BAR_LINE_WIDTH;
 
-    points.value.forEach((point: Point): void => {
-      const pointCoords: CanvasCoords = toCanvasCoords(point.x, point.y);
-      const predictedY: number = evaluateCurve(bestCurve, point.x);
-      const curveCoords: CanvasCoords = toCanvasCoords(point.x, predictedY);
+      points.value.forEach((point: Point): void => {
+        const pointCoords: CanvasCoords = toCanvasCoords(point.x, point.y);
+        const predictedY: number = evaluateCurve(bestCurve, point.x);
+        const curveCoords: CanvasCoords = toCanvasCoords(point.x, predictedY);
 
-      ctx.beginPath();
-      ctx.moveTo(pointCoords.cx, pointCoords.cy);
-      ctx.lineTo(curveCoords.cx, curveCoords.cy);
-      ctx.stroke();
-    });
+        ctx.beginPath();
+        ctx.moveTo(pointCoords.cx, pointCoords.cy);
+        ctx.lineTo(curveCoords.cx, curveCoords.cy);
+        ctx.stroke();
+      });
+    }
   }
 
   // Draw points
@@ -1786,16 +1926,19 @@ const draw = (): void => {
   ctx.fillText(COORD_MAX.toString(), PADDING - 15, PADDING + 5);
 
   // Display fitness above graph area (drawn last so it's on top)
-  if (bestCurve !== null) {
-    const fitnessText: string = `Fitness: ${formatScientific(
-      bestCurve.fitness,
-      8
-    )}`;
-    ctx.font = '14px monospace';
-    ctx.fillStyle = '#ffffff'; // Always white
-    ctx.textAlign = 'right';
-    ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING - 10);
-    ctx.textAlign = 'left'; // Reset to default
+  if (!hasNoSolution) {
+    const bestCurve: Curve | null = getBestCurve();
+    if (bestCurve !== null) {
+      const fitnessText: string = `Fitness: ${formatScientific(
+        bestCurve.fitness,
+        8
+      )}`;
+      ctx.font = '14px monospace';
+      ctx.fillStyle = '#ffffff'; // Always white
+      ctx.textAlign = 'right';
+      ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING - 10);
+      ctx.textAlign = 'left'; // Reset to default
+    }
   }
 };
 
@@ -1960,6 +2103,9 @@ watch(psParticles, (): void => {
             >
             <span v-else-if="solutionMethod === 'particle-swarm'"
               >Particle Swarm</span
+            >
+            <span v-else-if="solutionMethod === 'polynomial-solver'"
+              >Polynomial Solver</span
             >
             <span v-else>Gradient Descent - Momentum</span>
           </button>
