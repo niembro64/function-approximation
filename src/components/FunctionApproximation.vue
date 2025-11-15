@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, computed, type Ref } from 'vue';
 import Slider from './Slider.vue';
 import WeightCell from './WeightCell.vue';
 import InfoModal from './InfoModal.vue';
+import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
 import { generateScientificNotation } from '../utils/formatters';
 
 interface Point {
@@ -699,6 +700,16 @@ const closeInfoModal = (): void => {
   isInfoModalOpen.value = false;
 };
 
+const isAlgorithmSelectModalOpen = ref<boolean>(false);
+
+const openAlgorithmSelectModal = (): void => {
+  isAlgorithmSelectModalOpen.value = true;
+};
+
+const closeAlgorithmSelectModal = (): void => {
+  isAlgorithmSelectModalOpen.value = false;
+};
+
 // Solution method state
 type SolutionMethod =
   | 'genetic'
@@ -723,8 +734,22 @@ const ALGORITHM_ORDER: SolutionMethod[] = [
 
 const solutionMethod = ref<SolutionMethod>('gradient');
 
-const toggleSolutionMethod = (): void => {
-  // Find current index in the order array
+// Open algorithm selection modal (replaces cycling through algorithms)
+const openAlgorithmModal = (): void => {
+  openAlgorithmSelectModal();
+};
+
+// Select a specific algorithm from the modal
+const selectAlgorithm = (algorithm: string): void => {
+  solutionMethod.value = algorithm as SolutionMethod;
+
+  stopEvolution();
+  resetCurrentAlgorithm();
+  startEvolution();
+};
+
+// Cycle to next algorithm (for the arrow button)
+const nextAlgorithm = (): void => {
   const currentIndex = ALGORITHM_ORDER.indexOf(solutionMethod.value);
   if (currentIndex === -1) {
     throw new Error(`Unknown solution method: ${solutionMethod.value}`);
@@ -733,8 +758,6 @@ const toggleSolutionMethod = (): void => {
   // Move to next algorithm (wrap around to start if at end)
   const nextIndex = (currentIndex + 1) % ALGORITHM_ORDER.length;
   solutionMethod.value = ALGORITHM_ORDER[nextIndex];
-
-  console.log('🔄 Switching to algorithm:', solutionMethod.value);
 
   stopEvolution();
   resetCurrentAlgorithm();
@@ -845,7 +868,6 @@ const resetRandomSearch = (): void => {
     })
   );
   curves.value = initialCurves;
-  console.log('Random Search RESET - Created curves:', curves.value.length, '(should be', rsCurves.value + 1, ')');
   updateFitness();
 };
 
@@ -1341,11 +1363,7 @@ const momentumStep = (): void => {
 
 // Perform one Random Search step
 const randomSearchStep = (): void => {
-  console.log('🔍 randomSearchStep CALLED - curves.length:', curves.value.length, 'rsCurves:', rsCurves.value);
-  if (curves.value.length === 0) {
-    console.log('❌ randomSearchStep EARLY RETURN - no curves!');
-    return;
-  }
+  if (curves.value.length === 0) return;
 
   // Get current best
   const currentBest: Curve = curves.value[0];
@@ -1404,8 +1422,6 @@ const randomSearchStep = (): void => {
     newCurves.push(candidate);
   });
   curves.value = newCurves;
-
-  console.log('Random Search - Total curves:', curves.value.length, '(1 global best + ' + rsCurves.value + ' random)');
 };
 
 // Initialize particle swarm
@@ -1609,7 +1625,6 @@ const animationLoop = (currentTime: number): void => {
         momentumStep();
         break;
       case 'random-search':
-        console.log('⚡ Animation loop calling randomSearchStep');
         randomSearchStep();
         break;
       case 'polynomial-solver':
@@ -2209,11 +2224,12 @@ watch(rsCurves, (): void => {
 
       <!-- All Buttons -->
       <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
-        <!-- First Row: Info + Algorithm -->
-        <div class="flex items-stretch gap-2">
+        <!-- First Row: Info + Algorithm Name + Select + Next -->
+        <div class="flex items-center gap-2">
+          <!-- Info Button -->
           <button
             @click="openInfoModal"
-            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0 self-center"
+            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
             style="filter: brightness(1)"
             @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
             @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
@@ -2224,34 +2240,17 @@ watch(rsCurves, (): void => {
           >
             <span class="text-lg md:text-base font-bold">i</span>
           </button>
-          <button
-            @click="toggleSolutionMethod"
-            class="flex-1 py-3 md:py-2 px-2 text-base md:text-lg font-bold text-white border-none rounded cursor-pointer transition-all text-center flex items-center justify-center"
-            :style="{ backgroundColor: getAlgoColor() }"
-            @mouseover="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-            @mouseout="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(1)'
-            "
-            @mousedown="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.8)'
-            "
-            @mouseup="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-            title="Switch optimization method"
+
+          <!-- Algorithm Name (Not clickable) -->
+          <div
+            class="flex-1 py-3 md:py-2 px-3 text-sm md:text-base font-bold text-white text-center flex items-center justify-center"
           >
             <span v-if="solutionMethod === 'genetic'">Genetic Algorithm</span>
             <span v-else-if="solutionMethod === 'gradient'"
               >Gradient Descent - Stochastic</span
             >
             <span v-else-if="solutionMethod === 'adam'"
-              >Gradient Descent - Adam</span
+              >Grad Desc - Adam</span
             >
             <span v-else-if="solutionMethod === 'simulated-annealing'"
               >Simulated Annealing</span
@@ -2265,7 +2264,37 @@ watch(rsCurves, (): void => {
             <span v-else-if="solutionMethod === 'polynomial-solver'"
               >Polynomial Solver</span
             >
-            <span v-else>Gradient Descent - Momentum</span>
+            <span v-else>Grad Desc - Momentum</span>
+          </div>
+
+          <!-- Select Algorithm Button (Menu) -->
+          <button
+            @click="openAlgorithmModal"
+            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
+            style="filter: brightness(1)"
+            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            aria-label="Select Algorithm"
+            title="Select algorithm"
+          >
+            <span class="text-lg md:text-base font-bold">☰</span>
+          </button>
+
+          <!-- Next Algorithm Button -->
+          <button
+            @click="nextAlgorithm"
+            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
+            style="filter: brightness(1)"
+            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            aria-label="Next Algorithm"
+            title="Next algorithm"
+          >
+            <span class="text-lg md:text-base font-bold">▶</span>
           </button>
         </div>
 
@@ -2433,6 +2462,14 @@ watch(rsCurves, (): void => {
     <InfoModal
       :isOpen="isInfoModalOpen"
       @close="closeInfoModal"
+    />
+
+    <!-- Algorithm Select Modal -->
+    <AlgorithmSelectModal
+      :isOpen="isAlgorithmSelectModalOpen"
+      :currentAlgorithm="solutionMethod"
+      @close="closeAlgorithmSelectModal"
+      @select="selectAlgorithm"
     />
   </div>
 </template>
