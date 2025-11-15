@@ -11,12 +11,18 @@
   }
 
   body {
-    @apply m-0 p-0 flex items-center justify-center min-w-[320px] min-h-screen overflow-hidden;
+    @apply m-0 p-0 flex items-center justify-center min-w-[320px] overflow-hidden;
     @apply bg-[#242424] text-white/90;
+    /* Use dvh for mobile browsers to account for dynamic address bars */
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   #app {
-    @apply w-screen h-screen m-0 p-0 text-center overflow-hidden;
+    @apply w-screen m-0 p-0 text-center overflow-hidden;
+    /* Use dvh for mobile browsers to account for dynamic address bars */
+    height: 100vh;
+    height: 100dvh;
   }
 
   /* Range slider styling */
@@ -50,5 +56,19 @@
 
   input[type="range"]::-moz-range-thumb:hover {
     @apply bg-primary-hover;
+  }
+}
+
+@layer utilities {
+  /* Mobile-only dynamic viewport height utility */
+  .h-screen-mobile {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  @media (min-width: 768px) {
+    .h-screen-mobile {
+      height: auto;
+    }
   }
 }
