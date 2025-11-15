@@ -1583,8 +1583,6 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
   return value >= 0 ? `+${formatted}` : formatted;
 };
 
-// Alias for the shared utility function
-const formatScientific = generateScientificNotation;
 
 // Generate upper bound for summation notation
 const upperBound = computed((): string => {
@@ -1929,7 +1927,7 @@ const draw = (): void => {
   if (!hasNoSolution) {
     const bestCurve: Curve | null = getBestCurve();
     if (bestCurve !== null) {
-      const fitnessText: string = `Fitness: ${formatScientific(
+      const fitnessText: string = `Fitness: ${generateScientificNotation(
         bestCurve.fitness,
         8
       )}`;
@@ -2258,7 +2256,7 @@ watch(psParticles, (): void => {
           <div
             class="w-20 flex items-center justify-center font-bold text-ui-text text-xs md:text-sm font-mono"
           >
-            {{ formatScientific(curve.fitness, 2) }}
+            {{ generateScientificNotation(curve.fitness, 2) }}
           </div>
         </div>
       </div>

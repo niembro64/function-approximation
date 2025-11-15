@@ -9,15 +9,11 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// Alias for the shared utility function
-const formatScientific = generateScientificNotation;
-
 // Format number with explicit sign
 const formatWithSign = (value: number, decimals: number = 2): string => {
   const formatted: string = value.toFixed(decimals);
   return value >= 0 ? `+${formatted}` : formatted;
 };
-
 
 // Convert weight value to color (white=0, halfway at 1, full at infinity)
 const getWeightColor = (weight: number): string => {
@@ -71,10 +67,12 @@ const getTextColor = (weight: number): string => {
     class="flex-1 flex items-center justify-center text-[9px] px-0.5"
     :style="{
       backgroundColor: getWeightColor(weight),
-      color: getTextColor(weight)
+      color: getTextColor(weight),
     }"
     :title="`w${index}: ${formatWithSign(weight)}`"
   >
-    <span v-if="showFormula" class="font-mono">{{ formatScientific(weight) }}</span>
+    <span v-if="showFormula" class="font-mono">{{
+      generateScientificNotation(weight, 2)
+    }}</span>
   </div>
 </template>

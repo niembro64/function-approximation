@@ -1,5 +1,5 @@
 // Format number in scientific notation with explicit signs on both mantissa and exponent
-export const generateScientificNotation = (value: number, decimals: number = 4): string => {
+export const generateScientificNotation = (value: number, decimals: number): string => {
   const expStr: string = value.toExponential(decimals);
   // Replace 'e' or 'e-' with 'e+' or 'e-' to always show sign on exponent
   // and pad exponent to always show two digits
