@@ -244,8 +244,9 @@ const VIEWPORT_WIDTH_OFFSET: number = 660; // Increased for wider left panel
 const VIEWPORT_WIDTH_OFFSET_MOBILE: number = 40; // Minimal offset on mobile
 const MOBILE_BREAKPOINT: number = 768; // px
 
-// Curve Drawing
-const CURVE_RESOLUTION: number = 200; // Number of points to draw curves
+// Curve Drawing Resolution
+const PRIMARY_CURVE_RESOLUTION: number = 300; // Number of points for best curve (higher = smoother)
+const AUXILIARY_CURVE_RESOLUTION: number = 50; // Number of points for auxiliary curves (genetic children, particle swarm particles)
 
 // Error Bars
 const ERROR_BAR_LINE_WIDTH: number = 3;
@@ -1820,10 +1821,11 @@ const draw = (): void => {
       .reverse()
       .forEach((curve: Curve, index: number): void => {
         const rankIndex: number = sortedCurves.value.length - 1 - index;
+        const isPrimary: boolean = rankIndex === 0;
+
         ctx.strokeStyle = getCurveColor(rankIndex);
-        ctx.lineWidth =
-          rankIndex === 0 ? BEST_CURVE_LINE_WIDTH : OTHER_CURVE_LINE_WIDTH;
-        ctx.globalAlpha = rankIndex === 0 ? 1.0 : OTHER_CURVE_OPACITY;
+        ctx.lineWidth = isPrimary ? BEST_CURVE_LINE_WIDTH : OTHER_CURVE_LINE_WIDTH;
+        ctx.globalAlpha = isPrimary ? 1.0 : OTHER_CURVE_OPACITY;
         ctx.beginPath();
 
         // Extend drawing range horizontally beyond visible area
@@ -1831,8 +1833,11 @@ const draw = (): void => {
         const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
         const range: number = drawMax - drawMin;
 
-        for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
-          const x: number = drawMin + (i / CURVE_RESOLUTION) * range;
+        // Use higher resolution for primary curve, lower for auxiliary curves
+        const resolution: number = isPrimary ? PRIMARY_CURVE_RESOLUTION : AUXILIARY_CURVE_RESOLUTION;
+
+        for (let i: number = 0; i <= resolution; i++) {
+          const x: number = drawMin + (i / resolution) * range;
           const y: number = evaluateCurve(curve, x);
           const coords: CanvasCoords = toCanvasCoords(x, y);
 
