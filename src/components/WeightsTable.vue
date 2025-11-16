@@ -43,7 +43,7 @@ defineProps<Props>();
     <div
       v-for="(curve, index) in sortedCurves"
       :key="curve.id"
-      class="flex flex-1 font-mono text-xs transition-colors"
+      class="flex font-mono text-xs transition-colors"
       :class="
         index === 0 ||
         (solutionMethod !== 'genetic' &&
