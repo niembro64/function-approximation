@@ -59,9 +59,9 @@ const draw = (): void => {
 
   if (!isFinite(minLoss) || !isFinite(maxLoss)) return;
 
-  // Use log scale for y-axis
-  const logMin = Math.log10(minLoss);
-  const logMax = Math.log10(maxLoss);
+  // Use squared log10 scale for y-axis (more pronounced - compresses high values more)
+  const logMin = Math.pow(Math.log10(minLoss), 2);
+  const logMax = Math.pow(Math.log10(maxLoss), 2);
   const logRange = logMax - logMin;
 
   // Draw axes
@@ -82,10 +82,11 @@ const draw = (): void => {
   ctx.font = '12px monospace';
   ctx.textAlign = 'right';
 
-  // Y-axis grid (log scale)
+  // Y-axis grid (squared log10 scale)
   const numYTicks = 5;
   for (let i = 0; i <= numYTicks; i++) {
-    const logValue = logMin + (i / numYTicks) * logRange;
+    const squaredLogValue = logMin + (i / numYTicks) * logRange;
+    const logValue = Math.sqrt(squaredLogValue);
     const value = Math.pow(10, logValue);
     const y = CANVAS_HEIGHT - PADDING - (i / numYTicks) * graphHeight;
 
@@ -134,9 +135,9 @@ const draw = (): void => {
     let started = false;
     losses.forEach((loss, gen) => {
       if (loss > 0) {
-        const logLoss = Math.log10(loss);
+        const squaredLogLoss = Math.pow(Math.log10(loss), 2);
         const x = PADDING + (gen / maxGen) * graphWidth;
-        const y = CANVAS_HEIGHT - PADDING - ((logLoss - logMin) / logRange) * graphHeight;
+        const y = CANVAS_HEIGHT - PADDING - ((squaredLogLoss - logMin) / logRange) * graphHeight;
 
         if (!started) {
           ctx.moveTo(x, y);
