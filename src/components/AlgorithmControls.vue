@@ -24,7 +24,7 @@ const emit = defineEmits<{
   <!-- All Buttons -->
   <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
     <!-- First Row: Info + Back + Algorithm Name + Next + Select -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 order-2 md:order-1">
       <!-- Info Button -->
       <button
         @click="emit('info')"
@@ -95,7 +95,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Second Row: Reset/New Buttons -->
-    <div class="flex items-stretch gap-2">
+    <div class="flex items-stretch gap-2 order-1 md:order-2">
       <button
         @click="emit('reset')"
         class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
