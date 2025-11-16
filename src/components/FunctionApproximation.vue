@@ -1004,11 +1004,19 @@ const gaussianElimination = (A: number[][], b: number[]): number[] | null => {
 
 // Solve polynomial using linear algebra (exact or least-squares fit)
 const solvePolynomialExact = (): void => {
-  if (curves.value.length === 0) return;
-  const curve: Curve = curves.value[0]!;
-
   const n = numWeights.value; // Number of coefficients to solve for
   const m = numPoints.value;  // Number of data points
+
+  // No solution exists when there are more points than weights
+  if (m > n) {
+    // Clear curves to indicate no solution
+    curves.value = [];
+    updateLoss();
+    return;
+  }
+
+  if (curves.value.length === 0) return;
+  const curve: Curve = curves.value[0]!;
 
   // Build Vandermonde matrix A and vector b
   // A[i][j] = x_i^j (x to the power j)
@@ -1027,35 +1035,9 @@ const solvePolynomialExact = (): void => {
 
   let solution: number[] | null = null;
 
-  if (m >= n) {
-    // More points than weights (or equal): use least-squares via Normal Equations
-    // Solve (A^T * A) * x = A^T * b
-    const AtA: number[][] = [];
-    const Atb: number[] = [];
-
-    // Compute A^T * A (n x n matrix)
-    for (let i = 0; i < n; i++) {
-      const row: number[] = [];
-      for (let j = 0; j < n; j++) {
-        let sum = 0;
-        for (let k = 0; k < m; k++) {
-          sum += A[k][i] * A[k][j];
-        }
-        row.push(sum);
-      }
-      AtA.push(row);
-    }
-
-    // Compute A^T * b (n x 1 vector)
-    for (let i = 0; i < n; i++) {
-      let sum = 0;
-      for (let k = 0; k < m; k++) {
-        sum += A[k][i] * b[k];
-      }
-      Atb.push(sum);
-    }
-
-    solution = gaussianElimination(AtA, Atb);
+  if (m === n) {
+    // Equal points and weights: solve exact system
+    solution = gaussianElimination(A, b);
   } else {
     // Fewer points than weights: use only as many coefficients as we have points
     const reducedA: number[][] = [];
@@ -1900,6 +1882,10 @@ onUnmounted((): void => {
 watch(numPoints, (): void => {
   if (allPoints.value.length > 0) {
     if (solutionMethod.value === 'polynomial-solver') {
+      // Ensure we have a curve to solve with
+      if (curves.value.length === 0) {
+        generateSingleCurve();
+      }
       solvePolynomialExact();
     } else {
       updateLoss();
@@ -1909,14 +1895,17 @@ watch(numPoints, (): void => {
 
 // Regenerate curves when numWeights changes
 watch(numWeights, (): void => {
-  if (curves.value.length > 0) {
+  if (solutionMethod.value === 'polynomial-solver') {
+    // For polynomial solver, always regenerate and solve (handles no solution case internally)
+    if (curves.value.length === 0) {
+      generateSingleCurve();
+    }
+    solvePolynomialExact();
+  } else if (curves.value.length > 0) {
     if (solutionMethod.value === 'genetic') {
       generateCurves();
     } else if (solutionMethod.value === 'random-search') {
       resetRandomSearch();
-    } else if (solutionMethod.value === 'polynomial-solver') {
-      generateSingleCurve();
-      solvePolynomialExact();
     } else {
       generateSingleCurve();
     }
