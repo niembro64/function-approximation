@@ -5,6 +5,7 @@ interface Props {
   currentAlgoInfo: AlgorithmInfo;
   currentAlgoColor: string;
   pointsColor: string;
+  mode: 'single' | 'all';
 }
 
 defineProps<Props>();
@@ -17,14 +18,28 @@ const emit = defineEmits<{
   'reset': [];
   'resetParams': [];
   'newPoints': [];
+  'toggleMode': [];
 }>();
 </script>
 
 <template>
   <!-- All Buttons -->
   <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
+    <!-- Mode Toggle Button -->
+    <button
+      @click="emit('toggleMode')"
+      class="py-3 md:py-2 px-4 text-sm md:text-base font-bold text-white bg-gray-700 border-none rounded cursor-pointer transition-all order-3 md:order-1"
+      style="filter: brightness(1)"
+      @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+      @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+      @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+      @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+    >
+      {{ mode === 'single' ? 'Single Algorithm' : 'All Algorithms' }}
+    </button>
+
     <!-- First Row: Info + Back + Algorithm Name + Next + Select -->
-    <div class="flex items-center gap-2 order-2 md:order-1">
+    <div class="flex items-center gap-2 order-2 md:order-2" v-if="mode === 'single'">
       <!-- Info Button -->
       <button
         @click="emit('info')"
@@ -95,7 +110,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Second Row: Reset/New Buttons -->
-    <div class="flex items-stretch gap-2 order-1 md:order-2">
+    <div class="flex items-stretch gap-2 order-1 md:order-3" v-if="mode === 'single'">
       <button
         @click="emit('reset')"
         class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"

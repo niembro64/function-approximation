@@ -5,6 +5,7 @@ import WeightsTable from './WeightsTable.vue';
 import AlgorithmControls from './AlgorithmControls.vue';
 import InfoModal from './InfoModal.vue';
 import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
+import AllAlgorithmsView from './AllAlgorithmsView.vue';
 import { generateScientificNotation } from '../utils/formatters';
 import type {
   Point,
@@ -26,6 +27,37 @@ const CANVAS_SIZE = ref<number>(500);
 
 // Reactive state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const viewMode = ref<'single' | 'all'>('single');
+
+// All Algorithms mode state
+const allAlgoLossHistory = ref<Map<SolutionMethod, number[]>>(new Map());
+const allAlgoGenerationsPerSec = ref<number>(10);
+const allAlgoIsRunning = ref<boolean>(false);
+const allAlgoAnimationFrameId = ref<number | null>(null);
+const allAlgoLastFrameTime = ref<number>(0);
+
+// Per-algorithm state for All Algorithms mode
+interface AlgorithmState {
+  curves: Curve[];
+  // Particle Swarm
+  psParticles?: Particle[];
+  psGlobalBestWeights?: number[];
+  psGlobalBestLoss?: number;
+  // Simulated Annealing
+  saCurrentBest?: number[];
+  saBestLoss?: number;
+  saTemp?: number;
+  // Momentum
+  momentumV?: number[];
+  // Adam
+  adamM?: number[];
+  adamV?: number[];
+  adamT?: number;
+  // Random Search doesn't need extra state - just uses curves array
+}
+
+const allAlgoStates = ref<Map<SolutionMethod, AlgorithmState>>(new Map());
+
 const allPoints = ref<Point[]>([]); // Full set of points (up to CONFIG.sliders.points.max)
 const curves = ref<Curve[]>([]);
 const numPoints = ref<number>(
@@ -461,6 +493,209 @@ const currentAlgoColor = computed(() => currentAlgoInfo.value.color);
 // Open algorithm selection modal (replaces cycling through algorithms)
 const openAlgorithmModal = (): void => {
   openAlgorithmSelectModal();
+};
+
+// Toggle between Single and All Algorithms view modes
+const toggleViewMode = (): void => {
+  viewMode.value = viewMode.value === 'single' ? 'all' : 'single';
+
+  if (viewMode.value === 'all') {
+    // Entering All Algorithms mode - initialize
+    initializeAllAlgorithms();
+    allAlgoIsRunning.value = true;
+    startAllAlgorithmsEvolution();
+  } else {
+    // Leaving All Algorithms mode - clean up
+    stopAllAlgorithmsEvolution();
+    allAlgoLossHistory.value.clear();
+  }
+};
+
+// Save current algorithm state (for switching between algorithms in All Algorithms mode)
+const saveCurrentState = (): AlgorithmState => {
+  return {
+    curves: curves.value.map(c => ({ ...c, weights: [...c.weights] })),
+    psParticles: psParticlesState.value.map(p => ({
+      ...p,
+      weights: [...p.weights],
+      velocity: [...p.velocity],
+      bestWeights: [...p.bestWeights],
+    })),
+    psGlobalBestWeights: [...psGlobalBestWeights.value],
+    psGlobalBestLoss: psGlobalBestLoss.value,
+    saCurrentBest: saCurrentBest.value ? [...saCurrentBest.value] : undefined,
+    saBestLoss: saBestLoss.value,
+    saTemp: saTemperature.value,
+    momentumV: [...momentumV.value],
+    adamM: [...adamM.value],
+    adamV: [...adamV.value],
+    adamT: adamT.value,
+  };
+};
+
+// Restore algorithm state
+const restoreState = (state: AlgorithmState): void => {
+  curves.value = state.curves.map(c => ({ ...c, weights: [...c.weights] }));
+  psParticlesState.value = state.psParticles?.map(p => ({
+    ...p,
+    weights: [...p.weights],
+    velocity: [...p.velocity],
+    bestWeights: [...p.bestWeights],
+  })) || [];
+  psGlobalBestWeights.value = state.psGlobalBestWeights ? [...state.psGlobalBestWeights] : [];
+  psGlobalBestLoss.value = state.psGlobalBestLoss ?? Infinity;
+  saCurrentBest.value = state.saCurrentBest ? [...state.saCurrentBest] : null;
+  saBestLoss.value = state.saBestLoss ?? Infinity;
+  saTemperature.value = state.saTemp ?? saInitialTemp.value;
+  momentumV.value = state.momentumV ? [...state.momentumV] : [];
+  adamM.value = state.adamM ? [...state.adamM] : [];
+  adamV.value = state.adamV ? [...state.adamV] : [];
+  adamT.value = state.adamT ?? 0;
+};
+
+// Initialize all algorithms for comparison mode
+const initializeAllAlgorithms = (): void => {
+  allAlgoLossHistory.value.clear();
+  allAlgoStates.value.clear();
+
+  // Initialize each algorithm (excluding polynomial solver)
+  CONFIG.algorithmOrder.forEach((algorithm: SolutionMethod) => {
+    // Skip polynomial solver - it distorts the graph
+    if (algorithm === 'polynomial-solver') return;
+
+    allAlgoLossHistory.value.set(algorithm, []);
+
+    // Set to this algorithm temporarily to initialize it
+    const originalAlgo = solutionMethod.value;
+    solutionMethod.value = algorithm;
+
+    // Initialize the algorithm
+    resetCurrentAlgorithm();
+
+    // Save its initial state
+    allAlgoStates.value.set(algorithm, saveCurrentState());
+
+    // Restore original algorithm
+    solutionMethod.value = originalAlgo;
+  });
+};
+
+// Reset all algorithms to initial state
+const resetAllAlgorithms = (): void => {
+  initializeAllAlgorithms();
+};
+
+// Run one generation for all algorithms
+const runAllAlgorithmsGeneration = (): void => {
+  const originalAlgo = solutionMethod.value;
+
+  CONFIG.algorithmOrder.forEach((algorithm: SolutionMethod) => {
+    // Skip polynomial solver
+    if (algorithm === 'polynomial-solver') return;
+
+    // Restore this algorithm's state
+    const state = allAlgoStates.value.get(algorithm);
+    if (!state) return;
+
+    solutionMethod.value = algorithm;
+    restoreState(state);
+
+    // Run one step based on algorithm type
+    switch (algorithm) {
+      case 'genetic':
+        generateCurvesFromBest();
+        break;
+      case 'gradient':
+        gradientDescentStep();
+        break;
+      case 'adam':
+        adamStep();
+        break;
+      case 'simulated-annealing':
+        simulatedAnnealingStep();
+        break;
+      case 'particle-swarm':
+        particleSwarmStep();
+        break;
+      case 'momentum':
+        momentumStep();
+        break;
+      case 'random-search':
+        randomSearchStep();
+        break;
+      case 'polynomial-solver':
+        solvePolynomialExact();
+        break;
+    }
+
+    // Get the best loss for this algorithm
+    const bestCurve = getBestCurve();
+    const loss = bestCurve ? calculateLossWithPenalty(bestCurve) : Infinity;
+
+    // Record loss
+    const history = allAlgoLossHistory.value.get(algorithm);
+    if (history) {
+      history.push(loss);
+    }
+
+    // Save updated state
+    allAlgoStates.value.set(algorithm, saveCurrentState());
+  });
+
+  // Restore original algorithm
+  solutionMethod.value = originalAlgo;
+  const originalState = allAlgoStates.value.get(originalAlgo);
+  if (originalState) {
+    restoreState(originalState);
+  }
+};
+
+// Animation loop for All Algorithms mode
+const allAlgorithmsAnimationLoop = (timestamp: number): void => {
+  if (!allAlgoIsRunning.value) return;
+
+  if (allAlgoLastFrameTime.value === 0) {
+    allAlgoLastFrameTime.value = timestamp;
+  }
+
+  const deltaTime = timestamp - allAlgoLastFrameTime.value;
+  const frameInterval = 1000 / allAlgoGenerationsPerSec.value;
+
+  if (deltaTime >= frameInterval) {
+    runAllAlgorithmsGeneration();
+    allAlgoLastFrameTime.value = timestamp;
+  }
+
+  allAlgoAnimationFrameId.value = window.requestAnimationFrame(allAlgorithmsAnimationLoop);
+};
+
+// Start All Algorithms evolution
+const startAllAlgorithmsEvolution = (): void => {
+  if (allAlgoAnimationFrameId.value !== null) {
+    window.cancelAnimationFrame(allAlgoAnimationFrameId.value);
+  }
+  allAlgoLastFrameTime.value = 0;
+  allAlgoIsRunning.value = true;
+  allAlgoAnimationFrameId.value = window.requestAnimationFrame(allAlgorithmsAnimationLoop);
+};
+
+// Stop All Algorithms evolution
+const stopAllAlgorithmsEvolution = (): void => {
+  if (allAlgoAnimationFrameId.value !== null) {
+    window.cancelAnimationFrame(allAlgoAnimationFrameId.value);
+    allAlgoAnimationFrameId.value = null;
+  }
+  allAlgoIsRunning.value = false;
+};
+
+// Toggle play/pause for All Algorithms mode
+const toggleAllAlgorithmsPlay = (): void => {
+  allAlgoIsRunning.value = !allAlgoIsRunning.value;
+  if (allAlgoIsRunning.value) {
+    startAllAlgorithmsEvolution();
+  } else {
+    stopAllAlgorithmsEvolution();
+  }
 };
 
 // Select a specific algorithm from the modal
@@ -1993,59 +2228,97 @@ watch(rsCurves, (): void => {
   <div
     class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
   >
-    <div
-      class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
-    >
-      <!-- Control Panel (Sliders) -->
-      <ControlPanel
-        :sliderConfigs="sliderConfigs"
-        :thumbColor="currentAlgoColor"
-      />
+    <!-- Single Algorithm Mode -->
+    <template v-if="viewMode === 'single'">
+      <div
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
+      >
+        <!-- Control Panel (Sliders) -->
+        <ControlPanel
+          :sliderConfigs="sliderConfigs"
+          :thumbColor="currentAlgoColor"
+        />
 
-      <!-- Algorithm Controls (Buttons) -->
-      <AlgorithmControls
-        :currentAlgoInfo="currentAlgoInfo"
-        :currentAlgoColor="currentAlgoColor"
-        :pointsColor="CONFIG.colors.points.darkGray"
-        @info="openInfoModal"
-        @previous="previousAlgorithm"
-        @next="nextAlgorithm"
-        @selectAlgorithm="openAlgorithmModal"
-        @reset="resetCurrentAlgorithm"
-        @resetParams="resetParameters"
-        @newPoints="generateRandomPoints"
-      />
+        <!-- Algorithm Controls (Buttons) -->
+        <AlgorithmControls
+          :currentAlgoInfo="currentAlgoInfo"
+          :currentAlgoColor="currentAlgoColor"
+          :pointsColor="CONFIG.colors.points.darkGray"
+          :mode="viewMode"
+          @info="openInfoModal"
+          @previous="previousAlgorithm"
+          @next="nextAlgorithm"
+          @selectAlgorithm="openAlgorithmModal"
+          @reset="resetCurrentAlgorithm"
+          @resetParams="resetParameters"
+          @newPoints="generateRandomPoints"
+          @toggleMode="toggleViewMode"
+        />
 
-      <!-- Weights Table -->
-      <WeightsTable
-        :sortedCurves="sortedCurves"
-        :numWeights="numWeights"
-        :solutionMethod="solutionMethod"
-        :formatScientific="generateScientificNotation"
-      />
-    </div>
+        <!-- Weights Table -->
+        <WeightsTable
+          :sortedCurves="sortedCurves"
+          :numWeights="numWeights"
+          :solutionMethod="solutionMethod"
+          :formatScientific="generateScientificNotation"
+        />
+      </div>
 
-    <!-- Canvas Display -->
-    <canvas
-      ref="canvasRef"
-      :width="CANVAS_SIZE * CONFIG.canvas.scale"
-      :height="CANVAS_SIZE * CONFIG.canvas.scale"
-      class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
-      :style="{
-        cursor:
-          hoveredPointIndex !== null || draggingPointIndex !== null
-            ? 'pointer'
-            : 'default',
-      }"
-      @mousedown="handleMouseDown"
-      @mousemove="handleMouseMove"
-      @mouseup="handleMouseUp"
-      @mouseleave="handleMouseLeave"
-      @touchstart="handleTouchStart"
-      @touchmove="handleTouchMove"
-      @touchend="handleTouchEnd"
-      @touchcancel="handleTouchEnd"
-    />
+      <!-- Canvas Display -->
+      <canvas
+        ref="canvasRef"
+        :width="CANVAS_SIZE * CONFIG.canvas.scale"
+        :height="CANVAS_SIZE * CONFIG.canvas.scale"
+        class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
+        :style="{
+          cursor:
+            hoveredPointIndex !== null || draggingPointIndex !== null
+              ? 'pointer'
+              : 'default',
+        }"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+        @mouseleave="handleMouseLeave"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
+        @touchcancel="handleTouchEnd"
+      />
+    </template>
+
+    <!-- All Algorithms Mode -->
+    <template v-else>
+      <div
+        class="w-full flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto order-2 md:order-1"
+      >
+        <!-- Algorithm Controls (Buttons) - Mode toggle only -->
+        <AlgorithmControls
+          :currentAlgoInfo="currentAlgoInfo"
+          :currentAlgoColor="currentAlgoColor"
+          :pointsColor="CONFIG.colors.points.darkGray"
+          :mode="viewMode"
+          @info="openInfoModal"
+          @previous="previousAlgorithm"
+          @next="nextAlgorithm"
+          @selectAlgorithm="openAlgorithmModal"
+          @reset="resetCurrentAlgorithm"
+          @resetParams="resetParameters"
+          @newPoints="generateRandomPoints"
+          @toggleMode="toggleViewMode"
+        />
+
+        <!-- All Algorithms Comparison View -->
+        <AllAlgorithmsView
+          :lossHistory="allAlgoLossHistory"
+          :generationsPerSec="allAlgoGenerationsPerSec"
+          :isRunning="allAlgoIsRunning"
+          @reset="resetAllAlgorithms"
+          @toggle-play="toggleAllAlgorithmsPlay"
+          @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
+        />
+      </div>
+    </template>
 
     <!-- Info Modal -->
     <InfoModal
