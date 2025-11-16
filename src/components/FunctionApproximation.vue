@@ -2305,7 +2305,8 @@ watch(rsCurves, (): void => {
           ref="canvasRef"
           :width="CANVAS_SIZE * CONFIG.canvas.scale"
           :height="CANVAS_SIZE * CONFIG.canvas.scale"
-          class="touch-none w-full max-w-full object-contain md:w-auto md:h-auto"
+          class="touch-none max-w-full max-h-full object-contain"
+          style="width: auto; height: auto;"
         :style="{
           cursor:
             hoveredPointIndex !== null || draggingPointIndex !== null

@@ -216,6 +216,7 @@ watch(maxGen, () => {
     ref="canvasRef"
     :width="CANVAS_WIDTH"
     :height="CANVAS_HEIGHT"
-    class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
+    class="max-w-full max-h-full object-contain"
+    style="width: auto; height: auto;"
   />
 </template>
