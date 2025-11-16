@@ -35,7 +35,7 @@ const emit = defineEmits<{
       @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
       @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
     >
-      {{ mode === 'single' ? 'Single Algorithm' : 'All Algorithms' }}
+      {{ mode === 'single' ? 'Single Algorithm Simulation' : 'All Algorithms Simulation' }}
     </button>
 
     <!-- First Row: Info + Back + Algorithm Name + Next + Select -->
@@ -75,7 +75,10 @@ const emit = defineEmits<{
         class="flex-1 py-2 md:py-1 px-3 text-white text-center flex flex-col items-center justify-center"
       >
         <div class="text-xs md:text-xs opacity-80">{{ currentAlgoInfo.category }}</div>
-        <div class="text-sm md:text-base font-bold">{{ currentAlgoInfo.name }}</div>
+        <div class="text-sm md:text-base font-bold">
+          <span class="md:hidden">{{ currentAlgoInfo.name }}</span>
+          <span class="hidden md:inline">{{ currentAlgoInfo.fullName }}</span>
+        </div>
       </div>
 
       <!-- Next Algorithm Button -->

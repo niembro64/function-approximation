@@ -125,7 +125,7 @@ export const CONFIG = {
       mutationVariance: 1,
       weightPenalty: 0,
       learningRate: 0.1,
-      stochasticity: 0,
+      stochasticity: 0.1,
       adam: {
         learningRate: 0.1,
         beta1: 0.97,
@@ -159,7 +159,7 @@ export const CONFIG = {
       mutationVariance: 1,
       weightPenalty: 0,
       learningRate: 0.1,
-      stochasticity: 0,
+      stochasticity: 0.1,
       adam: {
         learningRate: 0.1,
         beta1: 0.97,

@@ -80,7 +80,7 @@ watch(genPerSecValue, (newVal) => {
       @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
       @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
     >
-      {{ graphMode === 'loss' ? 'Loss View' : 'Curves View' }}
+      {{ graphMode === 'loss' ? 'Loss Graph' : 'Curves Graph' }}
     </button>
   </div>
 </template>
