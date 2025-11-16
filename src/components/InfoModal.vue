@@ -262,12 +262,19 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 </ul>
               </div>
 
-              <div>
+              <div class="mb-3">
                 <h4 class="font-bold mb-1" style="color: #ca8a04">Simulated Annealing</h4>
                 <ul class="list-disc list-inside space-y-1 text-sm">
                   <li><strong>Initial Temp:</strong> Starting temperature for acceptance probability</li>
                   <li><strong>Cooling Rate:</strong> Multiplicative factor per iteration (0-1, typically 0.995-0.999)</li>
                   <li><strong>Iterations:</strong> Number of perturbations attempted per frame</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-1" style="color: #ec4899">Polynomial Solver</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                  <li><strong>No Parameters:</strong> This algorithm computes the exact solution deterministically - no tuning required!</li>
                 </ul>
               </div>
             </section>
