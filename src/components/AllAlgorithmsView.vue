@@ -5,6 +5,7 @@ import Slider from './Slider.vue';
 interface Props {
   generationsPerSec: number;
   isRunning: boolean;
+  graphMode: 'loss' | 'curves';
 }
 
 const props = defineProps<Props>();
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   'toggle-play': [];
   'newPoints': [];
   'update:generationsPerSec': [value: number];
+  'update:graphMode': [value: 'loss' | 'curves'];
 }>();
 
 const genPerSecValue = ref(props.generationsPerSec);
@@ -30,6 +32,19 @@ watch(genPerSecValue, (newVal) => {
 </script>
 
 <template>
+  <!-- Graph Mode Toggle -->
+  <button
+    @click="emit('update:graphMode', graphMode === 'loss' ? 'curves' : 'loss')"
+    class="mb-2 md:mb-3 py-3 md:py-2 px-4 text-sm md:text-base font-bold text-white bg-gray-700 border-none rounded cursor-pointer transition-all"
+    style="filter: brightness(1)"
+    @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+    @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+    @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+    @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+  >
+    {{ graphMode === 'loss' ? 'Loss Per Gen' : 'Graph All Curves' }}
+  </button>
+
   <!-- Gen Per Sec Slider -->
   <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
     <Slider

@@ -142,24 +142,42 @@ const draw = (): void => {
     ctx.stroke();
   });
 
-  // Draw legend
+  // Draw legend - sorted by current loss (best at top)
   ctx.textAlign = 'left';
   ctx.font = '12px monospace';
   let legendY = PADDING;
-  const legendX = CANVAS_WIDTH - PADDING - 150;
+  const legendX = CANVAS_WIDTH - PADDING - 220;
 
+  // Get algorithms with their current losses and sort
+  const algorithmsWithLoss: Array<{ algorithm: SolutionMethod; loss: number }> = [];
   CONFIG.algorithmOrder.forEach((algorithm) => {
     // Skip polynomial solver
     if (algorithm === 'polynomial-solver') return;
 
+    const losses = props.lossHistory.get(algorithm);
+    const currentLoss = losses && losses.length > 0 ? losses[losses.length - 1] : Infinity;
+    algorithmsWithLoss.push({ algorithm, loss: currentLoss });
+  });
+
+  // Sort by loss (ascending - best at top)
+  algorithmsWithLoss.sort((a, b) => a.loss - b.loss);
+
+  // Draw sorted legend
+  algorithmsWithLoss.forEach(({ algorithm, loss }) => {
     const color = CONFIG.utils.getAlgoColor(algorithm);
     const info = CONFIG.utils.getAlgoInfo(algorithm);
 
-    ctx.fillStyle = color;
-    ctx.fillRect(legendX, legendY - 8, 15, 15);
+    // Format loss in exponential notation with 4 decimal places
+    const lossText = loss === Infinity ? 'N/A' : loss.toExponential(4);
 
     ctx.fillStyle = '#aaa';
-    ctx.fillText(info.name, legendX + 20, legendY + 4);
+    ctx.fillText(lossText, legendX, legendY + 4);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(legendX + 85, legendY - 8, 15, 15);
+
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(info.name, legendX + 105, legendY + 4);
 
     legendY += 20;
   });

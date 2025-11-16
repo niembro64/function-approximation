@@ -7,6 +7,7 @@ import InfoModal from './InfoModal.vue';
 import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
 import AllAlgorithmsView from './AllAlgorithmsView.vue';
 import AllAlgorithmsGraph from './AllAlgorithmsGraph.vue';
+import AllAlgorithmsCurvesGraph from './AllAlgorithmsCurvesGraph.vue';
 import { generateScientificNotation } from '../utils/formatters';
 import type {
   Point,
@@ -36,6 +37,7 @@ const allAlgoGenerationsPerSec = ref<number>(10);
 const allAlgoIsRunning = ref<boolean>(false);
 const allAlgoAnimationFrameId = ref<number | null>(null);
 const allAlgoLastFrameTime = ref<number>(0);
+const allAlgoGraphMode = ref<'loss' | 'curves'>('loss');
 
 // Per-algorithm state for All Algorithms mode
 interface AlgorithmState {
@@ -2340,16 +2342,24 @@ watch(rsCurves, (): void => {
         <AllAlgorithmsView
           :generationsPerSec="allAlgoGenerationsPerSec"
           :isRunning="allAlgoIsRunning"
+          :graphMode="allAlgoGraphMode"
           @reset="resetAllAlgorithms"
           @toggle-play="toggleAllAlgorithmsPlay"
           @newPoints="generateRandomPoints"
           @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
+          @update:graphMode="allAlgoGraphMode = $event"
         />
       </div>
 
       <!-- Graph Display -->
       <AllAlgorithmsGraph
+        v-if="allAlgoGraphMode === 'loss'"
         :lossHistory="allAlgoLossHistory"
+      />
+      <AllAlgorithmsCurvesGraph
+        v-else
+        :allAlgoStates="allAlgoStates"
+        :points="points"
       />
     </template>
 
