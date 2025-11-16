@@ -520,8 +520,13 @@ const generateRandomPoints = (): void => {
     })
   );
 
-  // Reset the current algorithm when points change (old solutions are no longer valid)
-  resetCurrentAlgorithm();
+  // Polynomial solver needs fresh solve since it's exact, not iterative
+  if (solutionMethod.value === 'polynomial-solver') {
+    resetPolynomialSolver();
+  } else {
+    // For all other algorithms, preserve the "brain" and just recalculate losses
+    recalculateAllCachedLosses();
+  }
 };
 
 // Generate random weight (starts at 0)
@@ -1456,6 +1461,45 @@ const updateLoss = (): void => {
   curves.value.forEach((curve: Curve): void => {
     curve.loss = calculateBaseLoss(curve);
   });
+};
+
+// Recalculate all cached loss values when points change
+// This preserves the algorithm "brain" (weights, velocities, etc.) while updating scores
+const recalculateAllCachedLosses = (): void => {
+  // Recalculate curve losses
+  updateLoss();
+
+  // Recalculate particle swarm cached losses
+  if (solutionMethod.value === 'particle-swarm' && psParticlesState.value.length > 0) {
+    let newGlobalBestLoss: number = Infinity;
+    let newGlobalBestWeights: number[] = [];
+
+    psParticlesState.value.forEach((particle: Particle): void => {
+      // Recalculate personal best loss based on saved bestWeights
+      const bestCurve: Curve = { id: 0, weights: particle.bestWeights, loss: 0 };
+      bestCurve.loss = calculateBaseLoss(bestCurve);
+      particle.bestLoss = bestCurve.loss + calculateWeightPenalty(bestCurve);
+
+      // Track new global best
+      if (particle.bestLoss < newGlobalBestLoss) {
+        newGlobalBestLoss = particle.bestLoss;
+        newGlobalBestWeights = [...particle.bestWeights];
+      }
+    });
+
+    psGlobalBestLoss.value = newGlobalBestLoss;
+    psGlobalBestWeights.value = newGlobalBestWeights;
+
+    // Update curves array for display
+    updateParticleSwarmCurves();
+  }
+
+  // Recalculate simulated annealing cached loss
+  if (solutionMethod.value === 'simulated-annealing' && saCurrentBest.value !== null) {
+    const bestCurve: Curve = { id: 0, weights: saCurrentBest.value, loss: 0 };
+    bestCurve.loss = calculateBaseLoss(bestCurve);
+    saBestLoss.value = bestCurve.loss + calculateWeightPenalty(bestCurve);
+  }
 };
 
 // Get sorted curves by loss with weight penalty applied for selection (best first)
