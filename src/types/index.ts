@@ -8,7 +8,7 @@ export interface Point {
 export interface Curve {
   id: number;
   weights: number[];
-  fitness: number;
+  loss: number;
 }
 
 export interface CanvasCoords {

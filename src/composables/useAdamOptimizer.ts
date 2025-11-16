@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue';
 import type { Curve, Point, AdamState } from '../types';
-import { calculateFitness, generateRandomWeights } from '../utils/math';
+import { calculateLoss, generateRandomWeights } from '../utils/math';
 
 export function useAdamOptimizer() {
   const curves = ref<Curve[]>([]);
@@ -19,9 +19,9 @@ export function useAdamOptimizer() {
     const curve: Curve = {
       id: nextCurveId++,
       weights,
-      fitness: 0,
+      loss: 0,
     };
-    curve.fitness = calculateFitness(curve, points, weightPenalty);
+    curve.loss = calculateLoss(curve, points, weightPenalty);
     curves.value = [curve];
 
     // Reset Adam state
@@ -95,16 +95,16 @@ export function useAdamOptimizer() {
       curve.weights[i] -= (learningRate * mHat) / (Math.sqrt(vHat) + epsilon);
     }
 
-    // Update fitness
-    curve.fitness = calculateFitness(curve, points, weightPenalty);
+    // Update loss
+    curve.loss = calculateLoss(curve, points, weightPenalty);
   }
 
   /**
-   * Update fitness for the curve (used when points or penalty changes)
+   * Update loss for the curve (used when points or penalty changes)
    */
-  function updateFitness(points: Point[], weightPenalty: number): void {
+  function updateLoss(points: Point[], weightPenalty: number): void {
     if (curves.value.length > 0) {
-      curves.value[0].fitness = calculateFitness(curves.value[0], points, weightPenalty);
+      curves.value[0].loss = calculateLoss(curves.value[0], points, weightPenalty);
     }
   }
 
@@ -113,6 +113,6 @@ export function useAdamOptimizer() {
     adamState,
     generateSingleCurve,
     adamStep,
-    updateFitness,
+    updateLoss,
   };
 }

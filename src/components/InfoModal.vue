@@ -70,7 +70,7 @@ const handleBackdropClick = (event: MouseEvent): void => {
                 </div>
 
                 <div>
-                  <h4 class="font-bold text-white mb-2 text-base">Fitness (Mean Squared Error)</h4>
+                  <h4 class="font-bold text-white mb-2 text-base">Loss (Mean Squared Error)</h4>
                   <div class="font-mono text-sm mb-2">
                     MSE = (1/m) × Σ(yⱼ - f(xⱼ))²
                   </div>

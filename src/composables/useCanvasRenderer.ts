@@ -116,8 +116,8 @@ export function useCanvasRenderer(
     // Draw labels
     drawLabels(ctx);
 
-    // Draw fitness
-    drawFitness(ctx, bestCurve, getDotColor);
+    // Draw loss
+    drawLoss(ctx, bestCurve, getDotColor);
   }
 
   /**
@@ -269,20 +269,20 @@ export function useCanvasRenderer(
   }
 
   /**
-   * Draw fitness display
+   * Draw loss display
    */
-  function drawFitness(
+  function drawLoss(
     ctx: CanvasRenderingContext2D,
     bestCurve: Curve | null,
     getDotColor: () => string
   ): void {
     if (bestCurve === null) return;
 
-    const fitnessText: string = `Fitness: ${formatScientific(bestCurve.fitness, 2)}`;
+    const lossText: string = `Loss: ${formatScientific(bestCurve.loss, 2)}`;
     ctx.font = '14px monospace';
     ctx.fillStyle = getDotColor();
     ctx.textAlign = 'right';
-    ctx.fillText(fitnessText, CANVAS_SIZE.value - PADDING - 5, PADDING + 15);
+    ctx.fillText(lossText, CANVAS_SIZE.value - PADDING - 5, PADDING + 15);
     ctx.textAlign = 'left'; // Reset to default
   }
 

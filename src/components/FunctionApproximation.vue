@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, type Ref } from 'vue';
-import Slider from './Slider.vue';
-import WeightCell from './WeightCell.vue';
+import ControlPanel from './ControlPanel.vue';
+import WeightsTable from './WeightsTable.vue';
+import AlgorithmControls from './AlgorithmControls.vue';
 import InfoModal from './InfoModal.vue';
 import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
 import { generateScientificNotation } from '../utils/formatters';
@@ -140,7 +141,7 @@ import {
   ADAPTIVE_VARIANCE_ENABLED,
   ADAPTIVE_VARIANCE_MIN_SCALE,
   ADAPTIVE_VARIANCE_MAX_SCALE,
-  ADAPTIVE_VARIANCE_FITNESS_TARGET,
+  ADAPTIVE_VARIANCE_LOSS_TARGET,
   WEIGHT_PROPORTIONAL_VARIANCE_ENABLED,
   WEIGHT_PROPORTIONAL_VARIANCE_FACTOR,
   WEIGHT_PROPORTIONAL_VARIANCE_MIN,
@@ -266,12 +267,12 @@ const adamT = ref<number>(0); // Time step
 // Simulated Annealing state
 const saTemperature = ref<number>(saInitialTemp.value);
 const saCurrentBest = ref<number[] | null>(null);
-const saBestFitness = ref<number>(Infinity);
+const saBestLoss = ref<number>(Infinity);
 
 // Particle Swarm state
 const psParticlesState = ref<Particle[]>([]);
 const psGlobalBestWeights = ref<number[]>([]);
-const psGlobalBestFitness = ref<number>(Infinity);
+const psGlobalBestLoss = ref<number>(Infinity);
 
 // Momentum state
 const momentumV = ref<number[]>([]); // Velocity
@@ -691,10 +692,10 @@ const generateCurves = (): void => {
       weights: Array.from({ length: numWeights.value }, (): number =>
         randomWeight()
       ),
-      fitness: 0,
+      loss: 0,
     })
   );
-  updateFitness();
+  updateLoss();
 };
 
 // Generate single curve for gradient descent
@@ -705,10 +706,10 @@ const generateSingleCurve = (): void => {
       weights: Array.from({ length: numWeights.value }, (): number =>
         randomWeight()
       ),
-      fitness: 0,
+      loss: 0,
     },
   ];
-  updateFitness();
+  updateLoss();
 };
 
 // Reset functions for each algorithm
@@ -730,14 +731,14 @@ const resetAdamOptimizer = (): void => {
 const resetSimulatedAnnealing = (): void => {
   saTemperature.value = saInitialTemp.value;
   saCurrentBest.value = null;
-  saBestFitness.value = Infinity;
+  saBestLoss.value = Infinity;
   generateSingleCurve();
 };
 
 const resetParticleSwarm = (): void => {
   psParticlesState.value = [];
   psGlobalBestWeights.value = [];
-  psGlobalBestFitness.value = Infinity;
+  psGlobalBestLoss.value = Infinity;
   initializeParticleSwarm();
 };
 
@@ -759,11 +760,11 @@ const resetRandomSearch = (): void => {
     (_value: unknown, i: number): Curve => ({
       id: i,
       weights: Array.from({ length: numWeights.value }, (): number => randomNormal(0, 1)),
-      fitness: 0,
+      loss: 0,
     })
   );
   curves.value = initialCurves;
-  updateFitness();
+  updateLoss();
 };
 
 // Reset current algorithm
@@ -907,17 +908,17 @@ const applyMutation = (value: number, variance: number): number => {
   }
 };
 
-// Calculate adaptive variance scale based on fitness
-// Low fitness (good) -> low scale (fine-tuning)
-// High fitness (bad) -> high scale (exploration)
-const getAdaptiveVarianceScale = (fitness: number): number => {
+// Calculate adaptive variance scale based on loss
+// Low loss (good) -> low scale (fine-tuning)
+// High loss (bad) -> high scale (exploration)
+const getAdaptiveVarianceScale = (loss: number): number => {
   if (!ADAPTIVE_VARIANCE_ENABLED) {
     return 1.0;
   }
 
-  // Use square root scaling: scale = sqrt(fitness / target)
+  // Use square root scaling: scale = sqrt(loss / target)
   const rawScale: number = Math.sqrt(
-    fitness / ADAPTIVE_VARIANCE_FITNESS_TARGET
+    loss / ADAPTIVE_VARIANCE_LOSS_TARGET
   );
 
   // Clamp to min/max range
@@ -993,7 +994,7 @@ const gradientDescentStep = (): void => {
       weight - learningRate.value * gradients[i]
   );
 
-  updateFitness();
+  updateLoss();
 };
 
 // Perform one Adam optimization step
@@ -1058,7 +1059,7 @@ const adamStep = (): void => {
     );
   });
 
-  updateFitness();
+  updateLoss();
 };
 
 // Perform one Simulated Annealing step
@@ -1070,7 +1071,7 @@ const simulatedAnnealingStep = (): void => {
   // Initialize if needed
   if (saCurrentBest.value === null) {
     saCurrentBest.value = [...curve.weights];
-    saBestFitness.value = curve.fitness;
+    saBestLoss.value = curve.loss;
     saTemperature.value = saInitialTemp.value;
   }
 
@@ -1082,25 +1083,25 @@ const simulatedAnnealingStep = (): void => {
     newWeights[randomIndex] += perturbation;
 
     // Evaluate new solution
-    const newCurve: Curve = { id: 0, weights: newWeights, fitness: 0 };
-    newCurve.fitness = calculateBaseFitness(newCurve);
+    const newCurve: Curve = { id: 0, weights: newWeights, loss: 0 };
+    newCurve.loss = calculateBaseLoss(newCurve);
 
-    // Calculate fitness with penalty
-    const currentFitness: number = calculateFitnessWithPenalty(curve);
-    const newFitness: number =
-      newCurve.fitness + calculateWeightPenalty(newCurve);
+    // Calculate loss with penalty
+    const currentLoss: number = calculateLossWithPenalty(curve);
+    const newLoss: number =
+      newCurve.loss + calculateWeightPenalty(newCurve);
 
     // Accept or reject based on Metropolis criterion
-    const delta: number = newFitness - currentFitness;
+    const delta: number = newLoss - currentLoss;
     if (delta < 0 || Math.random() < Math.exp(-delta / saTemperature.value)) {
       // Accept new solution
       curve.weights = newWeights;
-      curve.fitness = newCurve.fitness;
+      curve.loss = newCurve.loss;
 
       // Update best if improved
-      if (newCurve.fitness < saBestFitness.value) {
+      if (newCurve.loss < saBestLoss.value) {
         saCurrentBest.value = [...newWeights];
-        saBestFitness.value = newCurve.fitness;
+        saBestLoss.value = newCurve.loss;
       }
     }
   }
@@ -1108,7 +1109,7 @@ const simulatedAnnealingStep = (): void => {
   // Cool down temperature
   saTemperature.value *= saCoolingRate.value;
 
-  updateFitness();
+  updateLoss();
 };
 
 // Gaussian elimination with partial pivoting to solve linear system Ax = b
@@ -1231,10 +1232,10 @@ const solvePolynomialExact = (): void => {
       }
     }
 
-    curve.fitness = calculateBaseFitness(curve);
+    curve.loss = calculateBaseLoss(curve);
   }
 
-  updateFitness();
+  updateLoss();
 };
 
 // Perform one Momentum-based Gradient Descent step
@@ -1283,7 +1284,7 @@ const momentumStep = (): void => {
     return weight - momentumV.value[i];
   });
 
-  updateFitness();
+  updateLoss();
 };
 
 // Perform one Random Search step
@@ -1292,7 +1293,7 @@ const randomSearchStep = (): void => {
 
   // Get current best
   const currentBest: Curve = curves.value[0];
-  const currentBestFitness: number = calculateFitnessWithPenalty(currentBest);
+  const currentBestLoss: number = calculateLossWithPenalty(currentBest);
 
   // Generate N random candidates
   const randomCandidates: Curve[] = Array.from(
@@ -1303,36 +1304,36 @@ const randomSearchStep = (): void => {
         { length: numWeights.value },
         () => randomNormal(0, 1) // Random weights: mean=0, stddev=1
       ),
-      fitness: 0,
+      loss: 0,
     })
   );
 
-  // Calculate fitness for all candidates
+  // Calculate loss for all candidates
   randomCandidates.forEach((candidate: Curve): void => {
-    candidate.fitness = calculateBaseFitness(candidate);
+    candidate.loss = calculateBaseLoss(candidate);
   });
 
   // Find the best candidate from this batch
   let bestCandidate: Curve = randomCandidates[0];
-  let bestCandidateFitness: number = calculateFitnessWithPenalty(bestCandidate);
+  let bestCandidateLoss: number = calculateLossWithPenalty(bestCandidate);
 
   for (let i = 1; i < randomCandidates.length; i++) {
     const candidate = randomCandidates[i];
-    const candidateFitness = calculateFitnessWithPenalty(candidate);
-    if (candidateFitness < bestCandidateFitness) {
+    const candidateLoss = calculateLossWithPenalty(candidate);
+    if (candidateLoss < bestCandidateLoss) {
       bestCandidate = candidate;
-      bestCandidateFitness = candidateFitness;
+      bestCandidateLoss = candidateLoss;
     }
   }
 
   // Update global best if we found something better
   let globalBest: Curve;
-  if (bestCandidateFitness < currentBestFitness) {
+  if (bestCandidateLoss < currentBestLoss) {
     // New global best found!
-    globalBest = { id: 0, weights: [...bestCandidate.weights], fitness: bestCandidate.fitness };
+    globalBest = { id: 0, weights: [...bestCandidate.weights], loss: bestCandidate.loss };
   } else {
     // Keep current global best
-    globalBest = { id: 0, weights: [...currentBest.weights], fitness: currentBest.fitness };
+    globalBest = { id: 0, weights: [...currentBest.weights], loss: currentBest.loss };
   }
 
   // Re-ID the random candidates to start from 1 (0 is reserved for global best)
@@ -1368,24 +1369,24 @@ const initializeParticleSwarm = (): void => {
         weights: weights,
         velocity: velocity,
         bestWeights: [...weights],
-        bestFitness: Infinity,
+        bestLoss: Infinity,
       };
     }
   );
 
   psGlobalBestWeights.value = [];
-  psGlobalBestFitness.value = Infinity;
+  psGlobalBestLoss.value = Infinity;
 
   // Evaluate initial particles
   psParticlesState.value.forEach((particle: Particle): void => {
-    const curve: Curve = { id: 0, weights: particle.weights, fitness: 0 };
-    curve.fitness = calculateBaseFitness(curve);
-    const fitness: number = curve.fitness + calculateWeightPenalty(curve);
+    const curve: Curve = { id: 0, weights: particle.weights, loss: 0 };
+    curve.loss = calculateBaseLoss(curve);
+    const loss: number = curve.loss + calculateWeightPenalty(curve);
 
-    particle.bestFitness = fitness;
+    particle.bestLoss = loss;
 
-    if (fitness < psGlobalBestFitness.value) {
-      psGlobalBestFitness.value = fitness;
+    if (loss < psGlobalBestLoss.value) {
+      psGlobalBestLoss.value = loss;
       psGlobalBestWeights.value = [...particle.weights];
     }
   });
@@ -1400,10 +1401,10 @@ const updateParticleSwarmCurves = (): void => {
     (particle: Particle, i: number): Curve => ({
       id: i,
       weights: particle.weights,
-      fitness: calculateBaseFitness({
+      loss: calculateBaseLoss({
         id: 0,
         weights: particle.weights,
-        fitness: 0,
+        loss: 0,
       }),
     })
   );
@@ -1437,19 +1438,19 @@ const particleSwarmStep = (): void => {
     }
 
     // Evaluate new position
-    const curve: Curve = { id: 0, weights: particle.weights, fitness: 0 };
-    curve.fitness = calculateBaseFitness(curve);
-    const fitness: number = curve.fitness + calculateWeightPenalty(curve);
+    const curve: Curve = { id: 0, weights: particle.weights, loss: 0 };
+    curve.loss = calculateBaseLoss(curve);
+    const loss: number = curve.loss + calculateWeightPenalty(curve);
 
     // Update personal best
-    if (fitness < particle.bestFitness) {
-      particle.bestFitness = fitness;
+    if (loss < particle.bestLoss) {
+      particle.bestLoss = loss;
       particle.bestWeights = [...particle.weights];
     }
 
     // Update global best
-    if (fitness < psGlobalBestFitness.value) {
-      psGlobalBestFitness.value = fitness;
+    if (loss < psGlobalBestLoss.value) {
+      psGlobalBestLoss.value = loss;
       psGlobalBestWeights.value = [...particle.weights];
     }
   });
@@ -1468,8 +1469,8 @@ const generateCurvesFromBest = (): void => {
     return;
   }
 
-  // Calculate adaptive variance scale based on best fitness
-  const adaptiveScale: number = getAdaptiveVarianceScale(bestCurve.fitness);
+  // Calculate adaptive variance scale based on best loss
+  const adaptiveScale: number = getAdaptiveVarianceScale(bestCurve.loss);
 
   curves.value = Array.from(
     { length: numChildren.value },
@@ -1508,12 +1509,12 @@ const generateCurvesFromBest = (): void => {
       return {
         id: i,
         weights: mutatedWeights,
-        fitness: 0,
+        loss: 0,
       };
     }
   );
 
-  updateFitness();
+  updateLoss();
 };
 
 // Animation loop using requestAnimationFrame
@@ -1596,8 +1597,8 @@ const evaluateCurve = (curve: Curve, x: number): number => {
   );
 };
 
-// Calculate base fitness (Mean Squared Error only - lower is better)
-const calculateBaseFitness = (curve: Curve): number => {
+// Calculate base loss (Mean Squared Error only - lower is better)
+const calculateBaseLoss = (curve: Curve): number => {
   let sumSquaredError: number = 0;
   points.value.forEach((point: Point): void => {
     const predicted: number = evaluateCurve(curve, point.x);
@@ -1619,23 +1620,23 @@ const calculateWeightPenalty = (curve: Curve): number => {
   return penalty * weightPenalty.value;
 };
 
-// Calculate fitness with weight penalty for selection within a generation
-const calculateFitnessWithPenalty = (curve: Curve): number => {
-  return curve.fitness + calculateWeightPenalty(curve);
+// Calculate loss with weight penalty for selection within a generation
+const calculateLossWithPenalty = (curve: Curve): number => {
+  return curve.loss + calculateWeightPenalty(curve);
 };
 
-// Update fitness for all curves (stores base MSE only)
-const updateFitness = (): void => {
+// Update loss for all curves (stores base MSE only)
+const updateLoss = (): void => {
   curves.value.forEach((curve: Curve): void => {
-    curve.fitness = calculateBaseFitness(curve);
+    curve.loss = calculateBaseLoss(curve);
   });
 };
 
-// Get sorted curves by fitness with weight penalty applied for selection (best first)
+// Get sorted curves by loss with weight penalty applied for selection (best first)
 const sortedCurves = computed((): Curve[] => {
   return [...curves.value].sort(
     (a: Curve, b: Curve): number =>
-      calculateFitnessWithPenalty(a) - calculateFitnessWithPenalty(b)
+      calculateLossWithPenalty(a) - calculateLossWithPenalty(b)
   );
 });
 
@@ -1761,8 +1762,8 @@ const handleMouseMove = (event: MouseEvent): void => {
       y: clampedY,
     };
 
-    // Update fitness calculations
-    updateFitness();
+    // Update loss calculations
+    updateLoss();
   } else {
     // Not dragging, update hover state
     const pointIndex: number | null = getPointAtPosition(cx, cy);
@@ -1827,8 +1828,8 @@ const handleTouchMove = (event: TouchEvent): void => {
       y: clampedY,
     };
 
-    // Update fitness calculations
-    updateFitness();
+    // Update loss calculations
+    updateLoss();
   }
 };
 
@@ -1991,18 +1992,18 @@ const draw = (): void => {
   ctx.fillText('0', PADDING - 15, center + 5);
   ctx.fillText(COORD_MAX.toString(), PADDING - 15, PADDING + 5);
 
-  // Display fitness above graph area (drawn last so it's on top)
+  // Display loss above graph area (drawn last so it's on top)
   if (!hasNoSolution) {
     const bestCurve: Curve | null = getBestCurve();
     if (bestCurve !== null) {
-      const fitnessText: string = `Fitness: ${generateScientificNotation(
-        bestCurve.fitness,
+      const lossText: string = `Loss: ${generateScientificNotation(
+        bestCurve.loss,
         8
       )}`;
       ctx.font = '14px monospace';
       ctx.fillStyle = '#ffffff'; // Always white
       ctx.textAlign = 'center';
-      ctx.fillText(fitnessText, CANVAS_SIZE.value / 2, PADDING - 10);
+      ctx.fillText(lossText, CANVAS_SIZE.value / 2, PADDING - 10);
       ctx.textAlign = 'left'; // Reset to default
     }
   }
@@ -2029,7 +2030,6 @@ const handleResize = (): void => {
   // draw() is called in the RAF loop, no need to call here
 };
 
-// Initialize
 onMounted((): void => {
   calculateCanvasSize();
   generateRandomPoints();
@@ -2052,10 +2052,10 @@ onUnmounted((): void => {
   stopEvolution();
 });
 
-// Update fitness when numPoints changes (points auto-updates via computed)
+// Update loss when numPoints changes (points auto-updates via computed)
 watch(numPoints, (): void => {
   if (allPoints.value.length > 0) {
-    updateFitness();
+    updateLoss();
   }
 });
 
@@ -2112,258 +2112,36 @@ watch(rsCurves, (): void => {
     <div
       class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
     >
-      <!-- Sliders - Mobile (reversed order) -->
-      <div
-        class="mb-2 md:mb-3 flex md:hidden flex-col gap-1.5 md:gap-2 order-1 md:order-2"
-      >
-        <Slider
-          v-for="(config, index) in sliderConfigs"
-          :key="config.label"
-          :label="config.label"
-          v-model="config.model.value"
-          :min="config.min"
-          :max="config.max"
-          :step="config.step"
-          :decimals="config.decimals"
-          :logarithmic="config.logarithmic"
-          :logMidpoint="config.logMidpoint"
-          :useScientificNotation="config.useScientificNotation"
-          :thumbColor="currentAlgoColor"
-        />
-      </div>
+      <!-- Control Panel (Sliders) -->
+      <ControlPanel
+        :sliderConfigs="sliderConfigs"
+        :thumbColor="currentAlgoColor"
+      />
 
-      <!-- Sliders - Desktop (normal order) -->
-      <div
-        class="mb-2 md:mb-3 hidden md:flex flex-col gap-1.5 md:gap-2 order-1 md:order-2"
-      >
-        <Slider
-          v-for="(config, index) in sliderConfigs.slice().reverse()"
-          :key="config.label"
-          :label="config.label"
-          v-model="config.model.value"
-          :min="config.min"
-          :max="config.max"
-          :step="config.step"
-          :decimals="config.decimals"
-          :logarithmic="config.logarithmic"
-          :logMidpoint="config.logMidpoint"
-          :useScientificNotation="config.useScientificNotation"
-          :thumbColor="currentAlgoColor"
-        />
-      </div>
+      <!-- Algorithm Controls (Buttons) -->
+      <AlgorithmControls
+        :currentAlgoInfo="currentAlgoInfo"
+        :currentAlgoColor="currentAlgoColor"
+        :pointsColor="POINTS_DARK_GRAY"
+        @info="openInfoModal"
+        @previous="previousAlgorithm"
+        @next="nextAlgorithm"
+        @selectAlgorithm="openAlgorithmModal"
+        @reset="resetCurrentAlgorithm"
+        @resetParams="resetParameters"
+        @newPoints="generateRandomPoints"
+      />
 
-      <!-- All Buttons -->
-      <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
-        <!-- First Row: Info + Back + Algorithm Name + Next + Select -->
-        <div class="flex items-center gap-2">
-          <!-- Info Button -->
-          <button
-            @click="openInfoModal"
-            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
-            style="filter: brightness(1)"
-            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            aria-label="Information"
-            title="Learn more about this project"
-          >
-            <span class="text-lg md:text-base font-bold">i</span>
-          </button>
-
-          <!-- Previous Algorithm Button (Back) -->
-          <button
-            @click="previousAlgorithm"
-            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
-            style="filter: brightness(1)"
-            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            aria-label="Previous Algorithm"
-            title="Previous algorithm"
-          >
-            <span class="text-lg md:text-base font-bold"><</span>
-          </button>
-
-          <!-- Algorithm Name (Not clickable) -->
-          <div
-            class="flex-1 py-2 md:py-1 px-3 text-white text-center flex flex-col items-center justify-center"
-          >
-            <div class="text-xs md:text-xs opacity-80">{{ currentAlgoInfo.category }}</div>
-            <div class="text-sm md:text-base font-bold">{{ currentAlgoInfo.name }}</div>
-          </div>
-
-          <!-- Next Algorithm Button -->
-          <button
-            @click="nextAlgorithm"
-            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
-            style="filter: brightness(1)"
-            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            aria-label="Next Algorithm"
-            title="Next algorithm"
-          >
-            <span class="text-lg md:text-base font-bold">></span>
-          </button>
-
-          <!-- Select Algorithm Button (Menu) -->
-          <button
-            @click="openAlgorithmModal"
-            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
-            style="filter: brightness(1)"
-            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            aria-label="Select Algorithm"
-            title="Select algorithm"
-          >
-            <span class="text-lg md:text-base font-bold">^</span>
-          </button>
-        </div>
-
-        <!-- Second Row: Reset/New Buttons -->
-        <div class="flex items-stretch gap-2">
-          <button
-            @click="resetCurrentAlgorithm"
-            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-            :style="{ backgroundColor: currentAlgoColor }"
-            @mouseover="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-            @mouseout="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(1)'
-            "
-            @mousedown="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.8)'
-            "
-            @mouseup="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-          >
-            Reset Algo
-          </button>
-          <button
-            @click="resetParameters"
-            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-            :style="{ backgroundColor: currentAlgoColor }"
-            @mouseover="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-            @mouseout="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(1)'
-            "
-            @mousedown="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.8)'
-            "
-            @mouseup="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-          >
-            Reset Params
-          </button>
-          <button
-            @click="generateRandomPoints"
-            class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-            :style="{ backgroundColor: POINTS_DARK_GRAY }"
-            @mouseover="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-            @mouseout="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(1)'
-            "
-            @mousedown="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.8)'
-            "
-            @mouseup="
-              ($event.currentTarget as HTMLElement).style.filter =
-                'brightness(0.9)'
-            "
-          >
-            New Points
-          </button>
-        </div>
-      </div>
-
-      <!-- Table -->
-      <div
-        class="hidden md:flex bg-ui-bg-dark font-bold text-ui-text text-xs shrink-0 order-3"
-      >
-        <div class="flex-1 flex">
-          <div
-            v-for="wIndex in numWeights"
-            :key="wIndex"
-            class="flex-1 text-center flex items-center justify-center"
-            :class="
-              numWeights > 6 && numWeights <= 20 ? 'text-[10px]' : 'text-sm'
-            "
-          >
-            <template v-if="numWeights > 20">
-              <!-- No text for more than 20 columns -->
-            </template>
-            <template v-else-if="numWeights > 6">
-              {{ wIndex - 1 }}
-            </template>
-            <template v-else>
-              <template v-if="wIndex === 1">1</template>
-              <template v-else-if="wIndex === 2">x</template>
-              <template v-else
-                >x<sup>{{ wIndex - 1 }}</sup></template
-              >
-            </template>
-          </div>
-        </div>
-        <div class="w-20 text-center flex items-center justify-center">
-          Fitness
-        </div>
-      </div>
-
-      <div class="flex-1 overflow-hidden hidden md:flex flex-col order-4">
-        <div
-          v-for="(curve, index) in sortedCurves"
-          :key="curve.id"
-          class="flex flex-1 font-mono text-xs transition-colors"
-          :class="
-            index === 0 ||
-            (solutionMethod !== 'genetic' &&
-              solutionMethod !== 'particle-swarm' &&
-              solutionMethod !== 'random-search')
-              ? 'bg-ui-bg-highlight'
-              : 'bg-ui-bg-dark hover:bg-ui-bg-hover'
-          "
-        >
-          <div class="flex-1 flex">
-            <WeightCell
-              v-for="(weight, wIndex) in curve.weights"
-              :key="wIndex"
-              :weight="weight"
-              :index="wIndex"
-              :showFormula="numWeights < 6"
-            />
-          </div>
-          <div
-            class="w-20 flex items-center justify-center font-bold text-ui-text text-xs md:text-sm font-mono"
-          >
-            {{ generateScientificNotation(curve.fitness, 2) }}
-          </div>
-        </div>
-      </div>
+      <!-- Weights Table -->
+      <WeightsTable
+        :sortedCurves="sortedCurves"
+        :numWeights="numWeights"
+        :solutionMethod="solutionMethod"
+        :formatScientific="generateScientificNotation"
+      />
     </div>
 
+    <!-- Canvas Display -->
     <canvas
       ref="canvasRef"
       :width="CANVAS_SIZE * CANVAS_SCALE"

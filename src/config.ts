@@ -222,11 +222,11 @@ export const MUTATION_MIN_VARIANCE: number = 0.0;
 export const MUTATION_VARIANCE_EXPONENT: number = 1;
 export const MUTATION_WEIGHT_VARIANCE_SCALES: number[] = [1.0];
 
-// Adaptive Variance (based on fitness)
+// Adaptive Variance (based on loss)
 export const ADAPTIVE_VARIANCE_ENABLED: boolean = true;
 export const ADAPTIVE_VARIANCE_MIN_SCALE: number = 0.01;
 export const ADAPTIVE_VARIANCE_MAX_SCALE: number = 1.0;
-export const ADAPTIVE_VARIANCE_FITNESS_TARGET: number = 0.1;
+export const ADAPTIVE_VARIANCE_LOSS_TARGET: number = 0.1;
 
 // Weight-Proportional Variance (variance scales with weight magnitude)
 export const WEIGHT_PROPORTIONAL_VARIANCE_ENABLED: boolean = true;

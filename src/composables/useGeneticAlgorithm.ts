@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue';
 import type { Curve, Point } from '../types';
-import { randomNormal, calculateFitness, generateRandomWeights } from '../utils/math';
+import { randomNormal, calculateLoss, generateRandomWeights } from '../utils/math';
 
 export function useGeneticAlgorithm() {
   const curves = ref<Curve[]>([]);
@@ -21,9 +21,9 @@ export function useGeneticAlgorithm() {
       const curve: Curve = {
         id: nextCurveId++,
         weights,
-        fitness: 0,
+        loss: 0,
       };
-      curve.fitness = calculateFitness(curve, points, weightPenalty);
+      curve.loss = calculateLoss(curve, points, weightPenalty);
       curves.value.push(curve);
     }
   }
@@ -42,7 +42,7 @@ export function useGeneticAlgorithm() {
 
     // Find best curve (parent)
     const sortedCurves: Curve[] = [...curves.value].sort(
-      (a: Curve, b: Curve) => a.fitness - b.fitness
+      (a: Curve, b: Curve) => a.loss - b.loss
     );
     const parent: Curve = sortedCurves[0];
 
@@ -58,9 +58,9 @@ export function useGeneticAlgorithm() {
       const child: Curve = {
         id: nextCurveId++,
         weights: childWeights,
-        fitness: 0,
+        loss: 0,
       };
-      child.fitness = calculateFitness(child, points, weightPenalty);
+      child.loss = calculateLoss(child, points, weightPenalty);
       newCurves.push(child);
     }
 
@@ -68,11 +68,11 @@ export function useGeneticAlgorithm() {
   }
 
   /**
-   * Update fitness for all curves (used when points or penalty changes)
+   * Update loss for all curves (used when points or penalty changes)
    */
-  function updateFitness(points: Point[], weightPenalty: number): void {
+  function updateLoss(points: Point[], weightPenalty: number): void {
     for (const curve of curves.value) {
-      curve.fitness = calculateFitness(curve, points, weightPenalty);
+      curve.loss = calculateLoss(curve, points, weightPenalty);
     }
   }
 
@@ -80,6 +80,6 @@ export function useGeneticAlgorithm() {
     curves,
     generateCurves,
     evolutionStep,
-    updateFitness,
+    updateLoss,
   };
 }

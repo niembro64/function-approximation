@@ -8,7 +8,7 @@ export interface Point {
 export interface Curve {
   id: number;
   weights: number[];
-  fitness: number;
+  loss: number;
 }
 
 export interface CanvasCoords {
@@ -37,7 +37,7 @@ export interface Particle {
   weights: number[];
   velocity: number[];
   bestWeights: number[];
-  bestFitness: number;
+  bestLoss: number;
 }
 
 export type MutationDistribution = 'normal' | 'uniform';

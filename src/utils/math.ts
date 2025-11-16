@@ -22,9 +22,9 @@ export function evaluateCurve(curve: Curve, x: number): number {
 }
 
 /**
- * Calculate mean squared error fitness with optional L2 regularization
+ * Calculate mean squared error loss with optional L2 regularization
  */
-export function calculateFitness(
+export function calculateLoss(
   curve: Curve,
   points: Point[],
   weightPenalty: number = 0

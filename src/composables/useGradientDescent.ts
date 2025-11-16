@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue';
 import type { Curve, Point } from '../types';
-import { randomNormal, calculateFitness, generateRandomWeights } from '../utils/math';
+import { randomNormal, calculateLoss, generateRandomWeights } from '../utils/math';
 
 export function useGradientDescent() {
   const curves = ref<Curve[]>([]);
@@ -18,9 +18,9 @@ export function useGradientDescent() {
     const curve: Curve = {
       id: nextCurveId++,
       weights,
-      fitness: 0,
+      loss: 0,
     };
-    curve.fitness = calculateFitness(curve, points, weightPenalty);
+    curve.loss = calculateLoss(curve, points, weightPenalty);
     curves.value = [curve];
   }
 
@@ -79,16 +79,16 @@ export function useGradientDescent() {
       curve.weights[i] -= learningRate * gradients[i];
     }
 
-    // Update fitness
-    curve.fitness = calculateFitness(curve, points, weightPenalty);
+    // Update loss
+    curve.loss = calculateLoss(curve, points, weightPenalty);
   }
 
   /**
-   * Update fitness for the curve (used when points or penalty changes)
+   * Update loss for the curve (used when points or penalty changes)
    */
-  function updateFitness(points: Point[], weightPenalty: number): void {
+  function updateLoss(points: Point[], weightPenalty: number): void {
     if (curves.value.length > 0) {
-      curves.value[0].fitness = calculateFitness(curves.value[0], points, weightPenalty);
+      curves.value[0].loss = calculateLoss(curves.value[0], points, weightPenalty);
     }
   }
 
@@ -96,6 +96,6 @@ export function useGradientDescent() {
     curves,
     generateSingleCurve,
     gradientDescentStep,
-    updateFitness,
+    updateLoss,
   };
 }
