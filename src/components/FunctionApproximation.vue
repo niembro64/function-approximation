@@ -2263,7 +2263,7 @@ watch(rsCurves, (): void => {
         class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 bg-ui-bg border-0 border-ui-border overflow-hidden order-2 md:order-1 shrink-0 min-h-0 md:h-screen"
       >
         <!-- Weights Table -->
-        <div class="order-1 flex-1 flex flex-col justify-start overflow-hidden min-h-0">
+        <div class="order-1 flex-1 flex flex-col justify-start overflow-hidden min-h-0 mb-4">
           <WeightsTable
             :sortedCurves="sortedCurves"
             :numWeights="numWeights"
