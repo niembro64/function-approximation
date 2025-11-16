@@ -2255,15 +2255,15 @@ watch(rsCurves, (): void => {
   </div> -->
 
   <div
-    class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
+    class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch overflow-hidden p-0 md:p-0"
   >
     <!-- Single Algorithm Mode -->
     <template v-if="viewMode === 'single'">
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 md:shrink-0 shrink-0 min-h-0"
       >
         <!-- Weights Table -->
-        <div class="order-1 flex-1 flex flex-col justify-start overflow-y-auto">
+        <div class="order-1 flex-1 flex flex-col justify-start overflow-hidden min-h-0">
           <WeightsTable
             :sortedCurves="sortedCurves"
             :numWeights="numWeights"
@@ -2273,7 +2273,7 @@ watch(rsCurves, (): void => {
         </div>
 
         <!-- Control Panel (Sliders) -->
-        <div class="order-2">
+        <div class="order-2 shrink-0">
           <ControlPanel
             :sliderConfigs="sliderConfigs"
             :thumbColor="currentAlgoColor"
@@ -2281,7 +2281,7 @@ watch(rsCurves, (): void => {
         </div>
 
         <!-- Algorithm Controls (Buttons) -->
-        <div class="order-3">
+        <div class="order-3 shrink-0">
           <AlgorithmControls
             :currentAlgoInfo="currentAlgoInfo"
             :currentAlgoColor="currentAlgoColor"
@@ -2304,7 +2304,7 @@ watch(rsCurves, (): void => {
         ref="canvasRef"
         :width="CANVAS_SIZE * CONFIG.canvas.scale"
         :height="CANVAS_SIZE * CONFIG.canvas.scale"
-        class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
+        class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-none md:h-full md:flex-1"
         :style="{
           cursor:
             hoveredPointIndex !== null || draggingPointIndex !== null
@@ -2326,10 +2326,10 @@ watch(rsCurves, (): void => {
     <template v-else>
       <!-- Controls Sidebar -->
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 md:shrink-0 shrink-0 min-h-0"
       >
         <!-- All Algorithms Controls (Sliders & Buttons) -->
-        <div class="order-1">
+        <div class="order-1 shrink-0">
           <AllAlgorithmsView
             :generationsPerSec="allAlgoGenerationsPerSec"
             :graphMode="allAlgoGraphMode"
@@ -2341,7 +2341,7 @@ watch(rsCurves, (): void => {
         </div>
 
         <!-- Algorithm Controls (Buttons) - Mode toggle only -->
-        <div class="order-2">
+        <div class="order-2 shrink-0">
           <AlgorithmControls
             :currentAlgoInfo="currentAlgoInfo"
             :currentAlgoColor="currentAlgoColor"
@@ -2363,11 +2363,13 @@ watch(rsCurves, (): void => {
       <AllAlgorithmsGraph
         v-if="allAlgoGraphMode === 'loss'"
         :lossHistory="allAlgoLossHistory"
+        class="flex-1 min-h-0 min-w-0 order-1 md:order-2"
       />
       <AllAlgorithmsCurvesGraph
         v-else
         :allAlgoStates="allAlgoStates"
         :points="points"
+        class="flex-1 min-h-0 min-w-0 order-1 md:order-2"
       />
     </template>
 
