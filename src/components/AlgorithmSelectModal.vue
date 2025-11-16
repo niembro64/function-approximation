@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ALGORITHMS } from '../config';
+import { CONFIG } from '../config';
 
 interface Props {
   isOpen: boolean;
@@ -56,7 +56,7 @@ const selectAlgorithm = (algorithm: string): void => {
           <!-- Algorithm List -->
           <div class="space-y-2">
             <button
-              v-for="algo in ALGORITHMS"
+              v-for="algo in CONFIG.algorithms"
               :key="algo.id"
               @click="selectAlgorithm(algo.id)"
               class="w-full text-left px-4 py-3 rounded transition-all border-2"

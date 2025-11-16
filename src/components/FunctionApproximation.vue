@@ -16,163 +16,7 @@ import type {
   MutationDistribution,
   SolutionMethod,
 } from '../types';
-import {
-  TAILWIND_PURPLE_500,
-  TAILWIND_VIOLET_500,
-  TAILWIND_INDIGO_500,
-  TAILWIND_BLUE_500,
-  TAILWIND_CYAN_500,
-  TAILWIND_GREEN_600,
-  TAILWIND_LIME_700,
-  TAILWIND_EMERALD_600,
-  TAILWIND_YELLOW_600,
-  TAILWIND_PINK_500,
-  TAILWIND_FUCSHIA_500,
-  TAILWIND_RED_500,
-  POINTS_DARK_GRAY,
-  POINTS_GRAY,
-  ALGO_GENETIC_ALGORITHM,
-  ALGO_PARTICLE_SWARM,
-  ALGO_GRADIENT_DESCENT,
-  ALGO_MOMENTUM_BASED_GD,
-  ALGO_ADAM_OPTIMIZER,
-  ALGO_SIMULATED_ANNEALING,
-  ALGO_POLYNOMIAL_SOLVER,
-  ALGO_RANDOM_SEARCH,
-  MIN_POINTS,
-  MAX_POINTS,
-  DEFAULT_NUM_POINTS_DESKTOP,
-  DEFAULT_NUM_POINTS_MOBILE,
-  MIN_WEIGHTS,
-  MAX_WEIGHTS,
-  DEFAULT_NUM_WEIGHTS_DESKTOP,
-  DEFAULT_NUM_WEIGHTS_MOBILE,
-  MIN_CHILDREN,
-  MAX_CHILDREN,
-  DEFAULT_NUM_CHILDREN_DESKTOP,
-  DEFAULT_NUM_CHILDREN_MOBILE,
-  MIN_GENERATIONS_PER_SEC,
-  MAX_GENERATIONS_PER_SEC,
-  DEFAULT_GENERATIONS_PER_SEC_DESKTOP,
-  DEFAULT_GENERATIONS_PER_SEC_MOBILE,
-  MIN_MUTATION_VARIANCE,
-  MAX_MUTATION_VARIANCE,
-  DEFAULT_MUTATION_VARIANCE_DESKTOP,
-  DEFAULT_MUTATION_VARIANCE_MOBILE,
-  MIN_WEIGHT_PENALTY,
-  MAX_WEIGHT_PENALTY,
-  DEFAULT_WEIGHT_PENALTY_DESKTOP,
-  DEFAULT_WEIGHT_PENALTY_MOBILE,
-  MIN_LEARNING_RATE,
-  MAX_LEARNING_RATE,
-  DEFAULT_LEARNING_RATE_DESKTOP,
-  DEFAULT_LEARNING_RATE_MOBILE,
-  MIN_STOCHASTICITY,
-  MAX_STOCHASTICITY,
-  DEFAULT_STOCHASTICITY_DESKTOP,
-  DEFAULT_STOCHASTICITY_MOBILE,
-  MIN_ADAM_LEARNING_RATE,
-  MAX_ADAM_LEARNING_RATE,
-  DEFAULT_ADAM_LEARNING_RATE_DESKTOP,
-  DEFAULT_ADAM_LEARNING_RATE_MOBILE,
-  MIN_ADAM_BETA1,
-  MAX_ADAM_BETA1,
-  DEFAULT_ADAM_BETA1_DESKTOP,
-  DEFAULT_ADAM_BETA1_MOBILE,
-  MIN_ADAM_BETA2,
-  MAX_ADAM_BETA2,
-  DEFAULT_ADAM_BETA2_DESKTOP,
-  DEFAULT_ADAM_BETA2_MOBILE,
-  MIN_ADAM_EPSILON,
-  MAX_ADAM_EPSILON,
-  DEFAULT_ADAM_EPSILON_DESKTOP,
-  DEFAULT_ADAM_EPSILON_MOBILE,
-  MIN_SA_INITIAL_TEMP,
-  MAX_SA_INITIAL_TEMP,
-  DEFAULT_SA_INITIAL_TEMP_DESKTOP,
-  DEFAULT_SA_INITIAL_TEMP_MOBILE,
-  MIN_SA_COOLING_RATE,
-  MAX_SA_COOLING_RATE,
-  DEFAULT_SA_COOLING_RATE_DESKTOP,
-  DEFAULT_SA_COOLING_RATE_MOBILE,
-  MIN_SA_ITERATIONS,
-  MAX_SA_ITERATIONS,
-  DEFAULT_SA_ITERATIONS_DESKTOP,
-  DEFAULT_SA_ITERATIONS_MOBILE,
-  MIN_PS_PARTICLES,
-  MAX_PS_PARTICLES,
-  DEFAULT_PS_PARTICLES_DESKTOP,
-  DEFAULT_PS_PARTICLES_MOBILE,
-  MIN_PS_INERTIA,
-  MAX_PS_INERTIA,
-  DEFAULT_PS_INERTIA_DESKTOP,
-  DEFAULT_PS_INERTIA_MOBILE,
-  MIN_PS_COGNITIVE,
-  MAX_PS_COGNITIVE,
-  DEFAULT_PS_COGNITIVE_DESKTOP,
-  DEFAULT_PS_COGNITIVE_MOBILE,
-  MIN_PS_SOCIAL,
-  MAX_PS_SOCIAL,
-  DEFAULT_PS_SOCIAL_DESKTOP,
-  DEFAULT_PS_SOCIAL_MOBILE,
-  MIN_MOMENTUM_LEARNING_RATE,
-  MAX_MOMENTUM_LEARNING_RATE,
-  DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP,
-  DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE,
-  MIN_MOMENTUM_BETA,
-  MAX_MOMENTUM_BETA,
-  DEFAULT_MOMENTUM_BETA_DESKTOP,
-  DEFAULT_MOMENTUM_BETA_MOBILE,
-  MIN_RS_CURVES,
-  MAX_RS_CURVES,
-  DEFAULT_RS_CURVES_DESKTOP,
-  DEFAULT_RS_CURVES_MOBILE,
-  POINT_RADIUS,
-  DOT_BORDER_COLOR,
-  DOT_BORDER_WIDTH,
-  BEST_CURVE_LINE_WIDTH,
-  OTHER_CURVE_LINE_WIDTH,
-  OTHER_CURVE_COLOR,
-  OTHER_CURVE_OPACITY,
-  MUTATION_DISTRIBUTION_TYPE,
-  MUTATION_MIN_VARIANCE,
-  MUTATION_VARIANCE_EXPONENT,
-  MUTATION_WEIGHT_VARIANCE_SCALES,
-  ADAPTIVE_VARIANCE_ENABLED,
-  ADAPTIVE_VARIANCE_MIN_SCALE,
-  ADAPTIVE_VARIANCE_MAX_SCALE,
-  ADAPTIVE_VARIANCE_LOSS_TARGET,
-  WEIGHT_PROPORTIONAL_VARIANCE_ENABLED,
-  WEIGHT_PROPORTIONAL_VARIANCE_FACTOR,
-  WEIGHT_PROPORTIONAL_VARIANCE_MIN,
-  COORD_MIN,
-  COORD_MAX,
-  CURVE_HORIZONTAL_OVERDRAW,
-  CANVAS_SCALE,
-  PADDING,
-  MIN_CANVAS_SIZE,
-  MIN_CANVAS_SIZE_MOBILE,
-  VIEWPORT_HEIGHT_OFFSET,
-  VIEWPORT_HEIGHT_OFFSET_MOBILE,
-  VIEWPORT_WIDTH_OFFSET,
-  VIEWPORT_WIDTH_OFFSET_MOBILE,
-  MOBILE_BREAKPOINT,
-  PRIMARY_CURVE_RESOLUTION,
-  AUXILIARY_CURVE_RESOLUTION,
-  ERROR_BAR_LINE_WIDTH,
-  GRID_LINE_WIDTH,
-  AXIS_LINE_WIDTH,
-  COLOR_ERROR_BARS,
-  COLOR_POINT_BORDER,
-  COLOR_BACKGROUND,
-  COLOR_GRID,
-  COLOR_AXES,
-  COLOR_LABELS,
-  ALGORITHM_ORDER,
-  isMobile,
-  getAlgoColor,
-  getAlgoInfo,
-} from '../config';
+import { CONFIG } from '../config';
 
 // ============================================================
 // Reactive state
@@ -182,78 +26,78 @@ const CANVAS_SIZE = ref<number>(500);
 
 // Reactive state
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const allPoints = ref<Point[]>([]); // Full set of points (up to MAX_POINTS)
+const allPoints = ref<Point[]>([]); // Full set of points (up to CONFIG.sliders.points.max)
 const curves = ref<Curve[]>([]);
 const numPoints = ref<number>(
-  isMobile() ? DEFAULT_NUM_POINTS_MOBILE : DEFAULT_NUM_POINTS_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.points : CONFIG.defaults.desktop.points
 );
 const numWeights = ref<number>(
-  isMobile() ? DEFAULT_NUM_WEIGHTS_MOBILE : DEFAULT_NUM_WEIGHTS_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.weights : CONFIG.defaults.desktop.weights
 );
 const numChildren = ref<number>(
-  isMobile() ? DEFAULT_NUM_CHILDREN_MOBILE : DEFAULT_NUM_CHILDREN_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.children : CONFIG.defaults.desktop.children
 );
 const generationsPerSec = ref<number>(
-  isMobile()
-    ? DEFAULT_GENERATIONS_PER_SEC_MOBILE
-    : DEFAULT_GENERATIONS_PER_SEC_DESKTOP
+  CONFIG.utils.isMobile()
+    ? CONFIG.defaults.mobile.speed
+    : CONFIG.defaults.desktop.speed
 );
 const mutationVariance = ref<number>(
-  isMobile()
-    ? DEFAULT_MUTATION_VARIANCE_MOBILE
-    : DEFAULT_MUTATION_VARIANCE_DESKTOP
+  CONFIG.utils.isMobile()
+    ? CONFIG.defaults.mobile.mutationVariance
+    : CONFIG.defaults.desktop.mutationVariance
 );
 const weightPenalty = ref<number>(
-  isMobile() ? DEFAULT_WEIGHT_PENALTY_MOBILE : DEFAULT_WEIGHT_PENALTY_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.weightPenalty : CONFIG.defaults.desktop.weightPenalty
 );
 const learningRate = ref<number>(
-  isMobile() ? DEFAULT_LEARNING_RATE_MOBILE : DEFAULT_LEARNING_RATE_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.learningRate : CONFIG.defaults.desktop.learningRate
 );
 const stochasticity = ref<number>(
-  isMobile() ? DEFAULT_STOCHASTICITY_MOBILE : DEFAULT_STOCHASTICITY_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.stochasticity : CONFIG.defaults.desktop.stochasticity
 );
 const adamLearningRate = ref<number>(
-  isMobile()
-    ? DEFAULT_ADAM_LEARNING_RATE_MOBILE
-    : DEFAULT_ADAM_LEARNING_RATE_DESKTOP
+  CONFIG.utils.isMobile()
+    ? CONFIG.defaults.mobile.adam.learningRate
+    : CONFIG.defaults.desktop.adam.learningRate
 );
 const adamBeta1 = ref<number>(
-  isMobile() ? DEFAULT_ADAM_BETA1_MOBILE : DEFAULT_ADAM_BETA1_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.adam.beta1 : CONFIG.defaults.desktop.adam.beta1
 );
 const adamBeta2 = ref<number>(
-  isMobile() ? DEFAULT_ADAM_BETA2_MOBILE : DEFAULT_ADAM_BETA2_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.adam.beta2 : CONFIG.defaults.desktop.adam.beta2
 );
 const adamEpsilon = ref<number>(
-  isMobile() ? DEFAULT_ADAM_EPSILON_MOBILE : DEFAULT_ADAM_EPSILON_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.adam.epsilon : CONFIG.defaults.desktop.adam.epsilon
 );
 const saInitialTemp = ref<number>(
-  isMobile() ? DEFAULT_SA_INITIAL_TEMP_MOBILE : DEFAULT_SA_INITIAL_TEMP_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.simulatedAnnealing.initialTemp : CONFIG.defaults.desktop.simulatedAnnealing.initialTemp
 );
 const saCoolingRate = ref<number>(
-  isMobile() ? DEFAULT_SA_COOLING_RATE_MOBILE : DEFAULT_SA_COOLING_RATE_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.simulatedAnnealing.coolingRate : CONFIG.defaults.desktop.simulatedAnnealing.coolingRate
 );
 const saIterations = ref<number>(
-  isMobile() ? DEFAULT_SA_ITERATIONS_MOBILE : DEFAULT_SA_ITERATIONS_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.simulatedAnnealing.iterations : CONFIG.defaults.desktop.simulatedAnnealing.iterations
 );
 const psParticles = ref<number>(
-  isMobile() ? DEFAULT_PS_PARTICLES_MOBILE : DEFAULT_PS_PARTICLES_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.particleSwarm.particles : CONFIG.defaults.desktop.particleSwarm.particles
 );
 const psInertia = ref<number>(
-  isMobile() ? DEFAULT_PS_INERTIA_MOBILE : DEFAULT_PS_INERTIA_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.particleSwarm.inertia : CONFIG.defaults.desktop.particleSwarm.inertia
 );
 const psCognitive = ref<number>(
-  isMobile() ? DEFAULT_PS_COGNITIVE_MOBILE : DEFAULT_PS_COGNITIVE_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.particleSwarm.cognitive : CONFIG.defaults.desktop.particleSwarm.cognitive
 );
 const psSocial = ref<number>(
-  isMobile() ? DEFAULT_PS_SOCIAL_MOBILE : DEFAULT_PS_SOCIAL_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.particleSwarm.social : CONFIG.defaults.desktop.particleSwarm.social
 );
 const momentumLearningRate = ref<number>(
-  isMobile()
-    ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE
-    : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP
+  CONFIG.utils.isMobile()
+    ? CONFIG.defaults.mobile.momentum.learningRate
+    : CONFIG.defaults.desktop.momentum.learningRate
 );
 const momentumBeta = ref<number>(
-  isMobile() ? DEFAULT_MOMENTUM_BETA_MOBILE : DEFAULT_MOMENTUM_BETA_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.momentum.beta : CONFIG.defaults.desktop.momentum.beta
 );
 let animationFrameId: number | null = null;
 let lastFrameTime: number = 0;
@@ -279,7 +123,7 @@ const momentumV = ref<number[]>([]); // Velocity
 
 // Random Search state
 const rsCurves = ref<number>(
-  isMobile() ? DEFAULT_RS_CURVES_MOBILE : DEFAULT_RS_CURVES_DESKTOP
+  CONFIG.utils.isMobile() ? CONFIG.defaults.mobile.randomSearch.curves : CONFIG.defaults.desktop.randomSearch.curves
 );
 
 // Common slider configurations for both methods
@@ -287,14 +131,14 @@ const commonSliderConfigs: SliderConfig[] = [
   {
     label: '# Points',
     model: numPoints,
-    min: MIN_POINTS,
-    max: MAX_POINTS,
+    min: CONFIG.sliders.points.min,
+    max: CONFIG.sliders.points.max,
   },
   {
     label: '# Weights',
     model: numWeights,
-    min: MIN_WEIGHTS,
-    max: MAX_WEIGHTS,
+    min: CONFIG.sliders.weights.min,
+    max: CONFIG.sliders.weights.max,
   },
 ];
 
@@ -303,8 +147,8 @@ const speedSliderConfig = computed((): SliderConfig => {
   return {
     label: 'Speed',
     model: generationsPerSec,
-    min: MIN_GENERATIONS_PER_SEC,
-    max: MAX_GENERATIONS_PER_SEC,
+    min: CONFIG.sliders.speed.min,
+    max: CONFIG.sliders.speed.max,
   };
 });
 
@@ -312,8 +156,8 @@ const speedSliderConfig = computed((): SliderConfig => {
 const weightPenaltySliderConfig: SliderConfig = {
   label: '↑ Weight Penalty',
   model: weightPenalty,
-  min: MIN_WEIGHT_PENALTY,
-  max: MAX_WEIGHT_PENALTY,
+  min: CONFIG.sliders.weightPenalty.min,
+  max: CONFIG.sliders.weightPenalty.max,
   step: 0.01,
   decimals: 2,
   logarithmic: true,
@@ -326,14 +170,14 @@ const geneticSpecificSliders: SliderConfig[] = [
   {
     label: '# Children',
     model: numChildren,
-    min: MIN_CHILDREN,
-    max: MAX_CHILDREN,
+    min: CONFIG.sliders.children.min,
+    max: CONFIG.sliders.children.max,
   },
   {
     label: 'Mutation Variance',
     model: mutationVariance,
-    min: MIN_MUTATION_VARIANCE,
-    max: MAX_MUTATION_VARIANCE,
+    min: CONFIG.sliders.mutationVariance.min,
+    max: CONFIG.sliders.mutationVariance.max,
     step: 0.01,
     decimals: 2,
     useScientificNotation: true,
@@ -345,8 +189,8 @@ const gradientSpecificSliders: SliderConfig[] = [
   {
     label: 'Learning Rate',
     model: learningRate,
-    min: MIN_LEARNING_RATE,
-    max: MAX_LEARNING_RATE,
+    min: CONFIG.sliders.learningRate.min,
+    max: CONFIG.sliders.learningRate.max,
     step: 0.0001,
     decimals: 2,
     logarithmic: true,
@@ -356,8 +200,8 @@ const gradientSpecificSliders: SliderConfig[] = [
   {
     label: 'Stochasticity',
     model: stochasticity,
-    min: MIN_STOCHASTICITY,
-    max: MAX_STOCHASTICITY,
+    min: CONFIG.sliders.stochasticity.min,
+    max: CONFIG.sliders.stochasticity.max,
     step: 0.01,
     decimals: 2,
     useScientificNotation: true,
@@ -369,8 +213,8 @@ const adamSpecificSliders: SliderConfig[] = [
   {
     label: 'Learning Rate',
     model: adamLearningRate,
-    min: MIN_ADAM_LEARNING_RATE,
-    max: MAX_ADAM_LEARNING_RATE,
+    min: CONFIG.sliders.adam.learningRate.min,
+    max: CONFIG.sliders.adam.learningRate.max,
     step: 0.0001,
     decimals: 2,
     logarithmic: true,
@@ -380,8 +224,8 @@ const adamSpecificSliders: SliderConfig[] = [
   {
     label: 'Beta1 (Momentum)',
     model: adamBeta1,
-    min: MIN_ADAM_BETA1,
-    max: MAX_ADAM_BETA1,
+    min: CONFIG.sliders.adam.beta1.min,
+    max: CONFIG.sliders.adam.beta1.max,
     step: 0.001,
     decimals: 2,
     useScientificNotation: true,
@@ -389,8 +233,8 @@ const adamSpecificSliders: SliderConfig[] = [
   {
     label: 'Beta2 (RMSProp)',
     model: adamBeta2,
-    min: MIN_ADAM_BETA2,
-    max: MAX_ADAM_BETA2,
+    min: CONFIG.sliders.adam.beta2.min,
+    max: CONFIG.sliders.adam.beta2.max,
     step: 0.0001,
     decimals: 2,
     useScientificNotation: true,
@@ -398,8 +242,8 @@ const adamSpecificSliders: SliderConfig[] = [
   {
     label: 'Epsilon',
     model: adamEpsilon,
-    min: MIN_ADAM_EPSILON,
-    max: MAX_ADAM_EPSILON,
+    min: CONFIG.sliders.adam.epsilon.min,
+    max: CONFIG.sliders.adam.epsilon.max,
     step: 1e-10,
     decimals: 2,
     logarithmic: true,
@@ -413,8 +257,8 @@ const saSpecificSliders: SliderConfig[] = [
   {
     label: 'Initial Temp',
     model: saInitialTemp,
-    min: MIN_SA_INITIAL_TEMP,
-    max: MAX_SA_INITIAL_TEMP,
+    min: CONFIG.sliders.simulatedAnnealing.initialTemp.min,
+    max: CONFIG.sliders.simulatedAnnealing.initialTemp.max,
     step: 0.1,
     decimals: 2,
     useScientificNotation: true,
@@ -422,8 +266,8 @@ const saSpecificSliders: SliderConfig[] = [
   {
     label: 'Cooling Rate',
     model: saCoolingRate,
-    min: MIN_SA_COOLING_RATE,
-    max: MAX_SA_COOLING_RATE,
+    min: CONFIG.sliders.simulatedAnnealing.coolingRate.min,
+    max: CONFIG.sliders.simulatedAnnealing.coolingRate.max,
     step: 0.0001,
     decimals: 4,
     useScientificNotation: true,
@@ -431,8 +275,8 @@ const saSpecificSliders: SliderConfig[] = [
   {
     label: 'Iterations/Temp',
     model: saIterations,
-    min: MIN_SA_ITERATIONS,
-    max: MAX_SA_ITERATIONS,
+    min: CONFIG.sliders.simulatedAnnealing.iterations.min,
+    max: CONFIG.sliders.simulatedAnnealing.iterations.max,
   },
 ];
 
@@ -441,14 +285,14 @@ const psSpecificSliders: SliderConfig[] = [
   {
     label: '# Particles',
     model: psParticles,
-    min: MIN_PS_PARTICLES,
-    max: MAX_PS_PARTICLES,
+    min: CONFIG.sliders.particleSwarm.particles.min,
+    max: CONFIG.sliders.particleSwarm.particles.max,
   },
   {
     label: 'Inertia',
     model: psInertia,
-    min: MIN_PS_INERTIA,
-    max: MAX_PS_INERTIA,
+    min: CONFIG.sliders.particleSwarm.inertia.min,
+    max: CONFIG.sliders.particleSwarm.inertia.max,
     step: 0.01,
     decimals: 2,
     useScientificNotation: true,
@@ -456,8 +300,8 @@ const psSpecificSliders: SliderConfig[] = [
   {
     label: 'Cognitive',
     model: psCognitive,
-    min: MIN_PS_COGNITIVE,
-    max: MAX_PS_COGNITIVE,
+    min: CONFIG.sliders.particleSwarm.cognitive.min,
+    max: CONFIG.sliders.particleSwarm.cognitive.max,
     step: 0.01,
     decimals: 2,
     useScientificNotation: true,
@@ -465,8 +309,8 @@ const psSpecificSliders: SliderConfig[] = [
   {
     label: 'Social',
     model: psSocial,
-    min: MIN_PS_SOCIAL,
-    max: MAX_PS_SOCIAL,
+    min: CONFIG.sliders.particleSwarm.social.min,
+    max: CONFIG.sliders.particleSwarm.social.max,
     step: 0.01,
     decimals: 2,
     useScientificNotation: true,
@@ -478,8 +322,8 @@ const momentumSpecificSliders: SliderConfig[] = [
   {
     label: 'Learning Rate',
     model: momentumLearningRate,
-    min: MIN_MOMENTUM_LEARNING_RATE,
-    max: MAX_MOMENTUM_LEARNING_RATE,
+    min: CONFIG.sliders.momentum.learningRate.min,
+    max: CONFIG.sliders.momentum.learningRate.max,
     step: 0.0001,
     decimals: 2,
     logarithmic: true,
@@ -489,8 +333,8 @@ const momentumSpecificSliders: SliderConfig[] = [
   {
     label: 'Momentum (Beta)',
     model: momentumBeta,
-    min: MIN_MOMENTUM_BETA,
-    max: MAX_MOMENTUM_BETA,
+    min: CONFIG.sliders.momentum.beta.min,
+    max: CONFIG.sliders.momentum.beta.max,
     step: 0.001,
     decimals: 2,
     useScientificNotation: true,
@@ -501,8 +345,8 @@ const randomSearchSpecificSliders: SliderConfig[] = [
   {
     label: '# Curves',
     model: rsCurves,
-    min: MIN_RS_CURVES,
-    max: MAX_RS_CURVES,
+    min: CONFIG.sliders.randomSearch.curves.min,
+    max: CONFIG.sliders.randomSearch.curves.max,
   },
 ];
 
@@ -510,7 +354,7 @@ const randomSearchSpecificSliders: SliderConfig[] = [
 // Desktop: common sliders first (closest to top buttons)
 // Mobile: common sliders last (closest to bottom buttons)
 const sliderConfigs = computed((): SliderConfig[] => {
-  const mobile = isMobile();
+  const mobile = CONFIG.utils.isMobile();
   const specificSliders: SliderConfig[] = [];
   const speedAndPenalty: SliderConfig[] = [];
 
@@ -611,7 +455,7 @@ const closeAlgorithmSelectModal = (): void => {
 const solutionMethod = ref<SolutionMethod>('gradient');
 
 // Computed properties for current algorithm
-const currentAlgoInfo = computed(() => getAlgoInfo(solutionMethod.value));
+const currentAlgoInfo = computed(() => CONFIG.utils.getAlgoInfo(solutionMethod.value));
 const currentAlgoColor = computed(() => currentAlgoInfo.value.color);
 
 // Open algorithm selection modal (replaces cycling through algorithms)
@@ -630,14 +474,14 @@ const selectAlgorithm = (algorithm: string): void => {
 
 // Cycle to next algorithm (for the arrow button)
 const nextAlgorithm = (): void => {
-  const currentIndex = ALGORITHM_ORDER.indexOf(solutionMethod.value);
+  const currentIndex = CONFIG.algorithmOrder.indexOf(solutionMethod.value);
   if (currentIndex === -1) {
     throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
 
   // Move to next algorithm (wrap around to start if at end)
-  const nextIndex = (currentIndex + 1) % ALGORITHM_ORDER.length;
-  solutionMethod.value = ALGORITHM_ORDER[nextIndex];
+  const nextIndex = (currentIndex + 1) % CONFIG.algorithmOrder.length;
+  solutionMethod.value = CONFIG.algorithmOrder[nextIndex];
 
   stopEvolution();
   resetCurrentAlgorithm();
@@ -646,14 +490,14 @@ const nextAlgorithm = (): void => {
 
 // Cycle to previous algorithm (for the back button)
 const previousAlgorithm = (): void => {
-  const currentIndex = ALGORITHM_ORDER.indexOf(solutionMethod.value);
+  const currentIndex = CONFIG.algorithmOrder.indexOf(solutionMethod.value);
   if (currentIndex === -1) {
     throw new Error(`Unknown solution method: ${solutionMethod.value}`);
   }
 
   // Move to previous algorithm (wrap around to end if at start)
-  const prevIndex = (currentIndex - 1 + ALGORITHM_ORDER.length) % ALGORITHM_ORDER.length;
-  solutionMethod.value = ALGORITHM_ORDER[prevIndex];
+  const prevIndex = (currentIndex - 1 + CONFIG.algorithmOrder.length) % CONFIG.algorithmOrder.length;
+  solutionMethod.value = CONFIG.algorithmOrder[prevIndex];
 
   stopEvolution();
   resetCurrentAlgorithm();
@@ -665,14 +509,14 @@ const points = computed((): Point[] => {
   return allPoints.value.slice(0, numPoints.value);
 });
 
-// Generate random points in coordinate system (generates full set up to MAX_POINTS)
+// Generate random points in coordinate system (generates full set up to CONFIG.sliders.points.max)
 const generateRandomPoints = (): void => {
-  const range: number = COORD_MAX - COORD_MIN;
+  const range: number = CONFIG.coordinates.max - CONFIG.coordinates.min;
   allPoints.value = Array.from(
-    { length: MAX_POINTS },
+    { length: CONFIG.sliders.points.max },
     (): Point => ({
-      x: Math.random() * range + COORD_MIN,
-      y: Math.random() * range + COORD_MIN,
+      x: Math.random() * range + CONFIG.coordinates.min,
+      y: Math.random() * range + CONFIG.coordinates.min,
     })
   );
 
@@ -801,87 +645,87 @@ const resetCurrentAlgorithm = (): void => {
 
 // Reset all parameters to their defaults
 const resetParameters = (): void => {
-  const mobile = isMobile();
+  const mobile = CONFIG.utils.isMobile();
 
   // Common parameters
   numPoints.value = mobile
-    ? DEFAULT_NUM_POINTS_MOBILE
-    : DEFAULT_NUM_POINTS_DESKTOP;
+    ? CONFIG.defaults.mobile.points
+    : CONFIG.defaults.desktop.points;
   numWeights.value = mobile
-    ? DEFAULT_NUM_WEIGHTS_MOBILE
-    : DEFAULT_NUM_WEIGHTS_DESKTOP;
+    ? CONFIG.defaults.mobile.weights
+    : CONFIG.defaults.desktop.weights;
   generationsPerSec.value = mobile
-    ? DEFAULT_GENERATIONS_PER_SEC_MOBILE
-    : DEFAULT_GENERATIONS_PER_SEC_DESKTOP;
+    ? CONFIG.defaults.mobile.speed
+    : CONFIG.defaults.desktop.speed;
   weightPenalty.value = mobile
-    ? DEFAULT_WEIGHT_PENALTY_MOBILE
-    : DEFAULT_WEIGHT_PENALTY_DESKTOP;
+    ? CONFIG.defaults.mobile.weightPenalty
+    : CONFIG.defaults.desktop.weightPenalty;
 
   // Genetic Algorithm parameters
   numChildren.value = mobile
-    ? DEFAULT_NUM_CHILDREN_MOBILE
-    : DEFAULT_NUM_CHILDREN_DESKTOP;
+    ? CONFIG.defaults.mobile.children
+    : CONFIG.defaults.desktop.children;
   mutationVariance.value = mobile
-    ? DEFAULT_MUTATION_VARIANCE_MOBILE
-    : DEFAULT_MUTATION_VARIANCE_DESKTOP;
+    ? CONFIG.defaults.mobile.mutationVariance
+    : CONFIG.defaults.desktop.mutationVariance;
 
   // Gradient Descent parameters
   learningRate.value = mobile
-    ? DEFAULT_LEARNING_RATE_MOBILE
-    : DEFAULT_LEARNING_RATE_DESKTOP;
+    ? CONFIG.defaults.mobile.learningRate
+    : CONFIG.defaults.desktop.learningRate;
   stochasticity.value = mobile
-    ? DEFAULT_STOCHASTICITY_MOBILE
-    : DEFAULT_STOCHASTICITY_DESKTOP;
+    ? CONFIG.defaults.mobile.stochasticity
+    : CONFIG.defaults.desktop.stochasticity;
 
   // Adam Optimizer parameters
   adamLearningRate.value = mobile
-    ? DEFAULT_ADAM_LEARNING_RATE_MOBILE
-    : DEFAULT_ADAM_LEARNING_RATE_DESKTOP;
+    ? CONFIG.defaults.mobile.adam.learningRate
+    : CONFIG.defaults.desktop.adam.learningRate;
   adamBeta1.value = mobile
-    ? DEFAULT_ADAM_BETA1_MOBILE
-    : DEFAULT_ADAM_BETA1_DESKTOP;
+    ? CONFIG.defaults.mobile.adam.beta1
+    : CONFIG.defaults.desktop.adam.beta1;
   adamBeta2.value = mobile
-    ? DEFAULT_ADAM_BETA2_MOBILE
-    : DEFAULT_ADAM_BETA2_DESKTOP;
+    ? CONFIG.defaults.mobile.adam.beta2
+    : CONFIG.defaults.desktop.adam.beta2;
   adamEpsilon.value = mobile
-    ? DEFAULT_ADAM_EPSILON_MOBILE
-    : DEFAULT_ADAM_EPSILON_DESKTOP;
+    ? CONFIG.defaults.mobile.adam.epsilon
+    : CONFIG.defaults.desktop.adam.epsilon;
 
   // Simulated Annealing parameters
   saInitialTemp.value = mobile
-    ? DEFAULT_SA_INITIAL_TEMP_MOBILE
-    : DEFAULT_SA_INITIAL_TEMP_DESKTOP;
+    ? CONFIG.defaults.mobile.simulatedAnnealing.initialTemp
+    : CONFIG.defaults.desktop.simulatedAnnealing.initialTemp;
   saCoolingRate.value = mobile
-    ? DEFAULT_SA_COOLING_RATE_MOBILE
-    : DEFAULT_SA_COOLING_RATE_DESKTOP;
+    ? CONFIG.defaults.mobile.simulatedAnnealing.coolingRate
+    : CONFIG.defaults.desktop.simulatedAnnealing.coolingRate;
   saIterations.value = mobile
-    ? DEFAULT_SA_ITERATIONS_MOBILE
-    : DEFAULT_SA_ITERATIONS_DESKTOP;
+    ? CONFIG.defaults.mobile.simulatedAnnealing.iterations
+    : CONFIG.defaults.desktop.simulatedAnnealing.iterations;
 
   // Particle Swarm parameters
   psParticles.value = mobile
-    ? DEFAULT_PS_PARTICLES_MOBILE
-    : DEFAULT_PS_PARTICLES_DESKTOP;
+    ? CONFIG.defaults.mobile.particleSwarm.particles
+    : CONFIG.defaults.desktop.particleSwarm.particles;
   psInertia.value = mobile
-    ? DEFAULT_PS_INERTIA_MOBILE
-    : DEFAULT_PS_INERTIA_DESKTOP;
+    ? CONFIG.defaults.mobile.particleSwarm.inertia
+    : CONFIG.defaults.desktop.particleSwarm.inertia;
   psCognitive.value = mobile
-    ? DEFAULT_PS_COGNITIVE_MOBILE
-    : DEFAULT_PS_COGNITIVE_DESKTOP;
+    ? CONFIG.defaults.mobile.particleSwarm.cognitive
+    : CONFIG.defaults.desktop.particleSwarm.cognitive;
   psSocial.value = mobile
-    ? DEFAULT_PS_SOCIAL_MOBILE
-    : DEFAULT_PS_SOCIAL_DESKTOP;
+    ? CONFIG.defaults.mobile.particleSwarm.social
+    : CONFIG.defaults.desktop.particleSwarm.social;
 
   // Momentum-Based GD parameters
   momentumLearningRate.value = mobile
-    ? DEFAULT_MOMENTUM_LEARNING_RATE_MOBILE
-    : DEFAULT_MOMENTUM_LEARNING_RATE_DESKTOP;
+    ? CONFIG.defaults.mobile.momentum.learningRate
+    : CONFIG.defaults.desktop.momentum.learningRate;
   momentumBeta.value = mobile
-    ? DEFAULT_MOMENTUM_BETA_MOBILE
-    : DEFAULT_MOMENTUM_BETA_DESKTOP;
+    ? CONFIG.defaults.mobile.momentum.beta
+    : CONFIG.defaults.desktop.momentum.beta;
 
   // Random Search parameters
-  rsCurves.value = mobile ? DEFAULT_RS_CURVES_MOBILE : DEFAULT_RS_CURVES_DESKTOP;
+  rsCurves.value = mobile ? CONFIG.defaults.mobile.randomSearch.curves : CONFIG.defaults.desktop.randomSearch.curves;
 };
 
 // Generate normally distributed random number (Box-Muller transform)
@@ -901,7 +745,7 @@ const randomUniform = (mean: number, range: number): number => {
 // Apply mutation based on distribution type
 const applyMutation = (value: number, variance: number): number => {
   // @ts-ignore
-  if (MUTATION_DISTRIBUTION_TYPE === 'uniform') {
+  if (CONFIG.mutation.distributionType === 'uniform') {
     return randomUniform(value, variance);
   } else {
     return randomNormal(value, variance);
@@ -912,19 +756,19 @@ const applyMutation = (value: number, variance: number): number => {
 // Low loss (good) -> low scale (fine-tuning)
 // High loss (bad) -> high scale (exploration)
 const getAdaptiveVarianceScale = (loss: number): number => {
-  if (!ADAPTIVE_VARIANCE_ENABLED) {
+  if (!CONFIG.mutation.adaptiveVariance.enabled) {
     return 1.0;
   }
 
   // Use square root scaling: scale = sqrt(loss / target)
   const rawScale: number = Math.sqrt(
-    loss / ADAPTIVE_VARIANCE_LOSS_TARGET
+    loss / CONFIG.mutation.adaptiveVariance.lossTarget
   );
 
   // Clamp to min/max range
   return Math.max(
-    ADAPTIVE_VARIANCE_MIN_SCALE,
-    Math.min(ADAPTIVE_VARIANCE_MAX_SCALE, rawScale)
+    CONFIG.mutation.adaptiveVariance.minScale,
+    Math.min(CONFIG.mutation.adaptiveVariance.maxScale, rawScale)
   );
 };
 
@@ -932,7 +776,7 @@ const getAdaptiveVarianceScale = (loss: number): number => {
 // Larger weights (absolute value) -> larger variance
 // Smaller weights -> smaller variance
 const getWeightProportionalScale = (weight: number): number => {
-  if (!WEIGHT_PROPORTIONAL_VARIANCE_ENABLED) {
+  if (!CONFIG.mutation.weightProportional.enabled) {
     return 1.0;
   }
 
@@ -940,8 +784,8 @@ const getWeightProportionalScale = (weight: number): number => {
   // Scale = min + (absWeight * factor)
   // This gives proportional scaling with a minimum baseline
   return (
-    WEIGHT_PROPORTIONAL_VARIANCE_MIN +
-    absWeight * WEIGHT_PROPORTIONAL_VARIANCE_FACTOR
+    CONFIG.mutation.weightProportional.min +
+    absWeight * CONFIG.mutation.weightProportional.factor
   );
 };
 
@@ -1478,11 +1322,11 @@ const generateCurvesFromBest = (): void => {
       // Calculate base variance for this index (min to max range)
       const varianceFactor: number = Math.pow(
         i / (numChildren.value - 1),
-        MUTATION_VARIANCE_EXPONENT
+        CONFIG.mutation.varianceExponent
       );
       const baseVariance: number =
-        MUTATION_MIN_VARIANCE +
-        varianceFactor * (mutationVariance.value - MUTATION_MIN_VARIANCE);
+        CONFIG.mutation.minVariance +
+        varianceFactor * (mutationVariance.value - CONFIG.mutation.minVariance);
 
       // Apply adaptive scaling to base variance
       const adaptiveVariance: number = baseVariance * adaptiveScale;
@@ -1492,7 +1336,7 @@ const generateCurvesFromBest = (): void => {
         (weight: number, weightIndex: number): number => {
           // Get variance scale for this weight (default to 1.0 if not specified)
           const varianceScale: number =
-            MUTATION_WEIGHT_VARIANCE_SCALES[weightIndex] ?? 1.0;
+            CONFIG.mutation.weightVarianceScales[weightIndex] ?? 1.0;
 
           // Get weight-proportional scale based on magnitude
           const weightProportionalScale: number =
@@ -1663,15 +1507,15 @@ const upperBound = computed((): string => {
 const calculateCanvasSize = (): void => {
   const viewportHeight: number = window.innerHeight;
   const viewportWidth: number = window.innerWidth;
-  const isMobile: boolean = viewportWidth < MOBILE_BREAKPOINT;
+  const isMobile: boolean = viewportWidth < CONFIG.canvas.mobileBreakpoint;
 
   const heightOffset: number = isMobile
-    ? VIEWPORT_HEIGHT_OFFSET_MOBILE
-    : VIEWPORT_HEIGHT_OFFSET;
+    ? CONFIG.canvas.viewportHeightOffsetMobile
+    : CONFIG.canvas.viewportHeightOffset;
   const widthOffset: number = isMobile
-    ? VIEWPORT_WIDTH_OFFSET_MOBILE
-    : VIEWPORT_WIDTH_OFFSET;
-  const minSize: number = isMobile ? MIN_CANVAS_SIZE_MOBILE : MIN_CANVAS_SIZE;
+    ? CONFIG.canvas.viewportWidthOffsetMobile
+    : CONFIG.canvas.viewportWidthOffset;
+  const minSize: number = isMobile ? CONFIG.canvas.minSizeMobile : CONFIG.canvas.minSize;
 
   const availableHeight: number = viewportHeight - heightOffset;
   const availableWidth: number = viewportWidth - widthOffset;
@@ -1681,32 +1525,32 @@ const calculateCanvasSize = (): void => {
 
 // Convert coordinates from coordinate system range to canvas coordinates
 const toCanvasCoords = (x: number, y: number): CanvasCoords => {
-  const size: number = CANVAS_SIZE.value - 2 * PADDING;
-  const range: number = COORD_MAX - COORD_MIN;
+  const size: number = CANVAS_SIZE.value - 2 * CONFIG.canvas.padding;
+  const range: number = CONFIG.coordinates.max - CONFIG.coordinates.min;
   return {
-    cx: PADDING + ((x - COORD_MIN) * size) / range,
-    cy: CANVAS_SIZE.value - PADDING - ((y - COORD_MIN) * size) / range,
+    cx: CONFIG.canvas.padding + ((x - CONFIG.coordinates.min) * size) / range,
+    cy: CANVAS_SIZE.value - CONFIG.canvas.padding - ((y - CONFIG.coordinates.min) * size) / range,
   };
 };
 
 // Convert canvas coordinates back to coordinate system values
 const toCoordSystemCoords = (cx: number, cy: number): CoordSystemCoords => {
-  const size: number = CANVAS_SIZE.value - 2 * PADDING;
-  const range: number = COORD_MAX - COORD_MIN;
+  const size: number = CANVAS_SIZE.value - 2 * CONFIG.canvas.padding;
+  const range: number = CONFIG.coordinates.max - CONFIG.coordinates.min;
   return {
-    x: COORD_MIN + ((cx - PADDING) * range) / size,
-    y: COORD_MIN + ((CANVAS_SIZE.value - PADDING - cy) * range) / size,
+    x: CONFIG.coordinates.min + ((cx - CONFIG.canvas.padding) * range) / size,
+    y: CONFIG.coordinates.min + ((CANVAS_SIZE.value - CONFIG.canvas.padding - cy) * range) / size,
   };
 };
 
 // Get color for curve based on rank
 const getCurveColor = (index: number): string => {
-  return index === 0 ? currentAlgoColor.value : OTHER_CURVE_COLOR;
+  return index === 0 ? currentAlgoColor.value : CONFIG.colors.drawing.otherCurve;
 };
 
 // Find point at given canvas position (returns index or null)
 const getPointAtPosition = (cx: number, cy: number): number | null => {
-  const hitRadius: number = POINT_RADIUS + 5; // Slightly larger hit area
+  const hitRadius: number = CONFIG.drawing.pointRadius + 5; // Slightly larger hit area
 
   for (let i: number = 0; i < points.value.length; i++) {
     const point: Point | undefined = points.value[i];
@@ -1753,8 +1597,8 @@ const handleMouseMove = (event: MouseEvent): void => {
     const coords: CoordSystemCoords = toCoordSystemCoords(cx, cy);
 
     // Clamp to bounds
-    const clampedX: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.x));
-    const clampedY: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.y));
+    const clampedX: number = Math.max(CONFIG.coordinates.min, Math.min(CONFIG.coordinates.max, coords.x));
+    const clampedY: number = Math.max(CONFIG.coordinates.min, Math.min(CONFIG.coordinates.max, coords.y));
 
     // Update the point in allPoints array
     allPoints.value[draggingPointIndex.value] = {
@@ -1819,8 +1663,8 @@ const handleTouchMove = (event: TouchEvent): void => {
     const coords: CoordSystemCoords = toCoordSystemCoords(cx, cy);
 
     // Clamp to bounds
-    const clampedX: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.x));
-    const clampedY: number = Math.max(COORD_MIN, Math.min(COORD_MAX, coords.y));
+    const clampedX: number = Math.max(CONFIG.coordinates.min, Math.min(CONFIG.coordinates.max, coords.x));
+    const clampedY: number = Math.max(CONFIG.coordinates.min, Math.min(CONFIG.coordinates.max, coords.y));
 
     // Update the point in allPoints array
     allPoints.value[draggingPointIndex.value] = {
@@ -1847,46 +1691,46 @@ const draw = (): void => {
   if (ctx === null) return;
 
   // Scale context for high-resolution rendering
-  ctx.setTransform(CANVAS_SCALE, 0, 0, CANVAS_SCALE, 0, 0);
+  ctx.setTransform(CONFIG.canvas.scale, 0, 0, CONFIG.canvas.scale, 0, 0);
 
   // Clear canvas
-  ctx.fillStyle = COLOR_BACKGROUND;
+  ctx.fillStyle = CONFIG.colors.canvas.background;
   ctx.fillRect(0, 0, CANVAS_SIZE.value, CANVAS_SIZE.value);
 
   // Draw grid
-  ctx.strokeStyle = COLOR_GRID;
-  ctx.lineWidth = GRID_LINE_WIDTH;
+  ctx.strokeStyle = CONFIG.colors.canvas.grid;
+  ctx.lineWidth = CONFIG.drawing.grid.lineWidth;
   for (let i: number = 0; i <= 10; i++) {
-    const pos: number = PADDING + (i / 10) * (CANVAS_SIZE.value - 2 * PADDING);
+    const pos: number = CONFIG.canvas.padding + (i / 10) * (CANVAS_SIZE.value - 2 * CONFIG.canvas.padding);
 
     // Vertical lines
     ctx.beginPath();
-    ctx.moveTo(pos, PADDING);
-    ctx.lineTo(pos, CANVAS_SIZE.value - PADDING);
+    ctx.moveTo(pos, CONFIG.canvas.padding);
+    ctx.lineTo(pos, CANVAS_SIZE.value - CONFIG.canvas.padding);
     ctx.stroke();
 
     // Horizontal lines
     ctx.beginPath();
-    ctx.moveTo(PADDING, pos);
-    ctx.lineTo(CANVAS_SIZE.value - PADDING, pos);
+    ctx.moveTo(CONFIG.canvas.padding, pos);
+    ctx.lineTo(CANVAS_SIZE.value - CONFIG.canvas.padding, pos);
     ctx.stroke();
   }
 
   // Draw axes
-  ctx.strokeStyle = COLOR_AXES;
-  ctx.lineWidth = AXIS_LINE_WIDTH;
+  ctx.strokeStyle = CONFIG.colors.canvas.axes;
+  ctx.lineWidth = CONFIG.drawing.axes.lineWidth;
 
   // X-axis
   ctx.beginPath();
   const originCoords: CanvasCoords = toCanvasCoords(0, 0);
-  ctx.moveTo(PADDING, originCoords.cy);
-  ctx.lineTo(CANVAS_SIZE.value - PADDING, originCoords.cy);
+  ctx.moveTo(CONFIG.canvas.padding, originCoords.cy);
+  ctx.lineTo(CANVAS_SIZE.value - CONFIG.canvas.padding, originCoords.cy);
   ctx.stroke();
 
   // Y-axis
   ctx.beginPath();
-  ctx.moveTo(originCoords.cx, PADDING);
-  ctx.lineTo(originCoords.cx, CANVAS_SIZE.value - PADDING);
+  ctx.moveTo(originCoords.cx, CONFIG.canvas.padding);
+  ctx.lineTo(originCoords.cx, CANVAS_SIZE.value - CONFIG.canvas.padding);
   ctx.stroke();
 
   // Check if polynomial solver has no solution
@@ -1904,17 +1748,17 @@ const draw = (): void => {
         const isPrimary: boolean = rankIndex === 0;
 
         ctx.strokeStyle = getCurveColor(rankIndex);
-        ctx.lineWidth = isPrimary ? BEST_CURVE_LINE_WIDTH : OTHER_CURVE_LINE_WIDTH;
-        ctx.globalAlpha = isPrimary ? 1.0 : OTHER_CURVE_OPACITY;
+        ctx.lineWidth = isPrimary ? CONFIG.drawing.curves.bestLineWidth : CONFIG.drawing.curves.otherLineWidth;
+        ctx.globalAlpha = isPrimary ? 1.0 : CONFIG.drawing.curves.otherOpacity;
         ctx.beginPath();
 
         // Extend drawing range horizontally beyond visible area
-        const drawMin: number = COORD_MIN - CURVE_HORIZONTAL_OVERDRAW;
-        const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
+        const drawMin: number = CONFIG.coordinates.min - CONFIG.coordinates.curveHorizontalOverdraw;
+        const drawMax: number = CONFIG.coordinates.max + CONFIG.coordinates.curveHorizontalOverdraw;
         const range: number = drawMax - drawMin;
 
         // Use higher resolution for primary curve, lower for auxiliary curves
-        const resolution: number = isPrimary ? PRIMARY_CURVE_RESOLUTION : AUXILIARY_CURVE_RESOLUTION;
+        const resolution: number = isPrimary ? CONFIG.canvas.curveResolution.primary : CONFIG.canvas.curveResolution.auxiliary;
 
         for (let i: number = 0; i <= resolution; i++) {
           const x: number = drawMin + (i / resolution) * range;
@@ -1935,8 +1779,8 @@ const draw = (): void => {
     // Draw error bars from points to best fit curve
     const bestCurve: Curve | null = getBestCurve();
     if (bestCurve !== null) {
-      ctx.strokeStyle = COLOR_ERROR_BARS;
-      ctx.lineWidth = ERROR_BAR_LINE_WIDTH;
+      ctx.strokeStyle = CONFIG.colors.canvas.errorBars;
+      ctx.lineWidth = CONFIG.drawing.errorBars.lineWidth;
 
       points.value.forEach((point: Point): void => {
         const pointCoords: CanvasCoords = toCanvasCoords(point.x, point.y);
@@ -1955,42 +1799,42 @@ const draw = (): void => {
   points.value.forEach((point: Point): void => {
     const coords: CanvasCoords = toCanvasCoords(point.x, point.y);
 
-    ctx.fillStyle = POINTS_DARK_GRAY;
+    ctx.fillStyle = CONFIG.colors.points.darkGray;
     ctx.beginPath();
-    ctx.arc(coords.cx, coords.cy, POINT_RADIUS, 0, Math.PI * 2);
+    ctx.arc(coords.cx, coords.cy, CONFIG.drawing.pointRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = COLOR_POINT_BORDER;
-    ctx.lineWidth = DOT_BORDER_WIDTH;
+    ctx.strokeStyle = CONFIG.colors.canvas.pointBorder;
+    ctx.lineWidth = CONFIG.drawing.dot.borderWidth;
     ctx.stroke();
   });
 
   // Draw labels
-  ctx.fillStyle = COLOR_LABELS;
+  ctx.fillStyle = CONFIG.colors.canvas.labels;
   ctx.font = '12px monospace';
-  const center: number = PADDING + (CANVAS_SIZE.value - 2 * PADDING) / 2;
+  const center: number = CONFIG.canvas.padding + (CANVAS_SIZE.value - 2 * CONFIG.canvas.padding) / 2;
 
   // X-axis labels
   ctx.fillText(
-    COORD_MIN.toString(),
-    PADDING - 15,
-    CANVAS_SIZE.value - PADDING + 15
+    CONFIG.coordinates.min.toString(),
+    CONFIG.canvas.padding - 15,
+    CANVAS_SIZE.value - CONFIG.canvas.padding + 15
   );
-  ctx.fillText('0', center - 5, CANVAS_SIZE.value - PADDING + 15);
+  ctx.fillText('0', center - 5, CANVAS_SIZE.value - CONFIG.canvas.padding + 15);
   ctx.fillText(
-    COORD_MAX.toString(),
-    CANVAS_SIZE.value - PADDING - 5,
-    CANVAS_SIZE.value - PADDING + 15
+    CONFIG.coordinates.max.toString(),
+    CANVAS_SIZE.value - CONFIG.canvas.padding - 5,
+    CANVAS_SIZE.value - CONFIG.canvas.padding + 15
   );
 
   // Y-axis labels
   ctx.fillText(
-    COORD_MIN.toString(),
-    PADDING - 20,
-    CANVAS_SIZE.value - PADDING + 5
+    CONFIG.coordinates.min.toString(),
+    CONFIG.canvas.padding - 20,
+    CANVAS_SIZE.value - CONFIG.canvas.padding + 5
   );
-  ctx.fillText('0', PADDING - 15, center + 5);
-  ctx.fillText(COORD_MAX.toString(), PADDING - 15, PADDING + 5);
+  ctx.fillText('0', CONFIG.canvas.padding - 15, center + 5);
+  ctx.fillText(CONFIG.coordinates.max.toString(), CONFIG.canvas.padding - 15, CONFIG.canvas.padding + 5);
 
   // Display loss above graph area (drawn last so it's on top)
   if (!hasNoSolution) {
@@ -2003,7 +1847,7 @@ const draw = (): void => {
       ctx.font = '14px monospace';
       ctx.fillStyle = '#ffffff'; // Always white
       ctx.textAlign = 'center';
-      ctx.fillText(lossText, CANVAS_SIZE.value / 2, PADDING - 10);
+      ctx.fillText(lossText, CANVAS_SIZE.value / 2, CONFIG.canvas.padding - 10);
       ctx.textAlign = 'left'; // Reset to default
     }
   }
@@ -2122,7 +1966,7 @@ watch(rsCurves, (): void => {
       <AlgorithmControls
         :currentAlgoInfo="currentAlgoInfo"
         :currentAlgoColor="currentAlgoColor"
-        :pointsColor="POINTS_DARK_GRAY"
+        :pointsColor="CONFIG.colors.points.darkGray"
         @info="openInfoModal"
         @previous="previousAlgorithm"
         @next="nextAlgorithm"
@@ -2144,8 +1988,8 @@ watch(rsCurves, (): void => {
     <!-- Canvas Display -->
     <canvas
       ref="canvasRef"
-      :width="CANVAS_SIZE * CANVAS_SCALE"
-      :height="CANVAS_SIZE * CANVAS_SCALE"
+      :width="CANVAS_SIZE * CONFIG.canvas.scale"
+      :height="CANVAS_SIZE * CONFIG.canvas.scale"
       class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
       :style="{
         cursor:
