@@ -623,9 +623,6 @@ const runAllAlgorithmsGeneration = (): void => {
       case 'random-search':
         randomSearchStep();
         break;
-      case 'polynomial-solver':
-        solvePolynomialExact();
-        break;
     }
 
     // Get the best loss for this algorithm

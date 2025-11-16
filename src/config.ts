@@ -138,7 +138,7 @@ export const CONFIG = {
         iterations: 10,
       },
       particleSwarm: {
-        particles: 20,
+        particles: 5,
         inertia: 0.7,
         cognitive: 1.5,
         social: 1.5,
@@ -148,7 +148,7 @@ export const CONFIG = {
         beta: 0.9,
       },
       randomSearch: {
-        curves: 10,
+        curves: 5,
       },
     },
     mobile: {
@@ -172,7 +172,7 @@ export const CONFIG = {
         iterations: 10,
       },
       particleSwarm: {
-        particles: 20,
+        particles: 5,
         inertia: 0.7,
         cognitive: 1.5,
         social: 1.5,
@@ -182,7 +182,7 @@ export const CONFIG = {
         beta: 0.9,
       },
       randomSearch: {
-        curves: 10,
+        curves: 5,
       },
     },
   },
