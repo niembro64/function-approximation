@@ -7,5 +7,6 @@ export default defineConfig({
   base: '/function-approximation/',
   server: {
     host: true, // Expose on network
+    port: 3000, // Completely different port
   },
 })

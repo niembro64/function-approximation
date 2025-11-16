@@ -300,14 +300,14 @@ export const ALGORITHM_ORDER: SolutionMethod[] = [
 // ============================================================
 
 export const ALGORITHMS: AlgorithmInfo[] = [
-  { id: 'gradient', name: 'Gradient Descent - Stochastic', color: ALGO_GRADIENT_DESCENT },
-  { id: 'momentum', name: 'Gradient Descent - Momentum', color: ALGO_MOMENTUM_BASED_GD },
-  { id: 'adam', name: 'Gradient Descent - Adam', color: ALGO_ADAM_OPTIMIZER },
-  { id: 'genetic', name: 'Genetic Algorithm', color: ALGO_GENETIC_ALGORITHM },
-  { id: 'particle-swarm', name: 'Particle Swarm', color: ALGO_PARTICLE_SWARM },
-  { id: 'random-search', name: 'Random Search', color: ALGO_RANDOM_SEARCH },
-  { id: 'simulated-annealing', name: 'Simulated Annealing', color: ALGO_SIMULATED_ANNEALING },
-  { id: 'polynomial-solver', name: 'Polynomial Solver', color: ALGO_POLYNOMIAL_SOLVER },
+  { id: 'gradient', name: 'Stochastic', category: 'Gradient Descent', color: ALGO_GRADIENT_DESCENT },
+  { id: 'momentum', name: 'Momentum', category: 'Gradient Descent', color: ALGO_MOMENTUM_BASED_GD },
+  { id: 'adam', name: 'Adam', category: 'Gradient Descent', color: ALGO_ADAM_OPTIMIZER },
+  { id: 'genetic', name: 'Genetic Algorithm', category: 'Evolutionary', color: ALGO_GENETIC_ALGORITHM },
+  { id: 'particle-swarm', name: 'Particle Swarm', category: 'Swarm Intelligence', color: ALGO_PARTICLE_SWARM },
+  { id: 'random-search', name: 'Random Search', category: 'Baseline', color: ALGO_RANDOM_SEARCH },
+  { id: 'simulated-annealing', name: 'Simulated Annealing', category: 'Metaheuristic', color: ALGO_SIMULATED_ANNEALING },
+  { id: 'polynomial-solver', name: 'Polynomial Solver', category: 'Baseline', color: ALGO_POLYNOMIAL_SOLVER },
 ];
 
 // ============================================================
@@ -316,25 +316,14 @@ export const ALGORITHMS: AlgorithmInfo[] = [
 
 export const isMobile = (): boolean => window.innerWidth < MOBILE_BREAKPOINT;
 
-export const getAlgoColor = (solutionMethod: SolutionMethod): string => {
-  switch (solutionMethod) {
-    case 'genetic':
-      return ALGO_GENETIC_ALGORITHM;
-    case 'gradient':
-      return ALGO_GRADIENT_DESCENT;
-    case 'adam':
-      return ALGO_ADAM_OPTIMIZER;
-    case 'simulated-annealing':
-      return ALGO_SIMULATED_ANNEALING;
-    case 'particle-swarm':
-      return ALGO_PARTICLE_SWARM;
-    case 'momentum':
-      return ALGO_MOMENTUM_BASED_GD;
-    case 'polynomial-solver':
-      return ALGO_POLYNOMIAL_SOLVER;
-    case 'random-search':
-      return ALGO_RANDOM_SEARCH;
-    default:
-      throw new Error(`Unknown solution method: ${solutionMethod}`);
+export const getAlgoInfo = (solutionMethod: SolutionMethod): AlgorithmInfo => {
+  const info = ALGORITHMS.find(algo => algo.id === solutionMethod);
+  if (!info) {
+    throw new Error(`Unknown solution method: ${solutionMethod}`);
   }
+  return info;
+};
+
+export const getAlgoColor = (solutionMethod: SolutionMethod): string => {
+  return getAlgoInfo(solutionMethod).color;
 };

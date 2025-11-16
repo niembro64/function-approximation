@@ -170,6 +170,7 @@ import {
   ALGORITHM_ORDER,
   isMobile,
   getAlgoColor,
+  getAlgoInfo,
 } from '../config';
 
 // ============================================================
@@ -608,8 +609,9 @@ const closeAlgorithmSelectModal = (): void => {
 // Solution method state
 const solutionMethod = ref<SolutionMethod>('gradient');
 
-// Computed property for current algorithm color
-const currentAlgoColor = computed(() => getAlgoColor(solutionMethod.value));
+// Computed properties for current algorithm
+const currentAlgoInfo = computed(() => getAlgoInfo(solutionMethod.value));
+const currentAlgoColor = computed(() => currentAlgoInfo.value.color);
 
 // Open algorithm selection modal (replaces cycling through algorithms)
 const openAlgorithmModal = (): void => {
@@ -635,6 +637,22 @@ const nextAlgorithm = (): void => {
   // Move to next algorithm (wrap around to start if at end)
   const nextIndex = (currentIndex + 1) % ALGORITHM_ORDER.length;
   solutionMethod.value = ALGORITHM_ORDER[nextIndex];
+
+  stopEvolution();
+  resetCurrentAlgorithm();
+  startEvolution();
+};
+
+// Cycle to previous algorithm (for the back button)
+const previousAlgorithm = (): void => {
+  const currentIndex = ALGORITHM_ORDER.indexOf(solutionMethod.value);
+  if (currentIndex === -1) {
+    throw new Error(`Unknown solution method: ${solutionMethod.value}`);
+  }
+
+  // Move to previous algorithm (wrap around to end if at start)
+  const prevIndex = (currentIndex - 1 + ALGORITHM_ORDER.length) % ALGORITHM_ORDER.length;
+  solutionMethod.value = ALGORITHM_ORDER[prevIndex];
 
   stopEvolution();
   resetCurrentAlgorithm();
@@ -2053,6 +2071,11 @@ watch(rsCurves, (): void => {
 </script>
 
 <template>
+  <!-- BUILD TIMESTAMP FOR CACHE VERIFICATION -->
+  <div class="fixed top-0 right-0 bg-red-600 text-white px-2 py-1 text-xs z-50">
+    BUILD: 2025-11-16 00:05 UTC - BACK BUTTON ADDED
+  </div>
+
   <div
     class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"
   >
@@ -2101,7 +2124,7 @@ watch(rsCurves, (): void => {
 
       <!-- All Buttons -->
       <div class="mb-2 md:mb-3 flex flex-col gap-2 order-2 md:order-1">
-        <!-- First Row: Info + Algorithm Name + Select + Next -->
+        <!-- First Row: Info + Back + Algorithm Name + Next + Select -->
         <div class="flex items-center gap-2">
           <!-- Info Button -->
           <button
@@ -2118,46 +2141,28 @@ watch(rsCurves, (): void => {
             <span class="text-lg md:text-base font-bold">i</span>
           </button>
 
-          <!-- Algorithm Name (Not clickable) -->
-          <div
-            class="flex-1 py-3 md:py-2 px-3 text-sm md:text-base font-bold text-white text-center flex items-center justify-center"
-          >
-            <span v-if="solutionMethod === 'genetic'">Genetic Algorithm</span>
-            <span v-else-if="solutionMethod === 'gradient'"
-              >Gradient Descent - Stochastic</span
-            >
-            <span v-else-if="solutionMethod === 'adam'"
-              >Grad Desc - Adam</span
-            >
-            <span v-else-if="solutionMethod === 'simulated-annealing'"
-              >Simulated Annealing</span
-            >
-            <span v-else-if="solutionMethod === 'particle-swarm'"
-              >Particle Swarm</span
-            >
-            <span v-else-if="solutionMethod === 'random-search'"
-              >Random Search</span
-            >
-            <span v-else-if="solutionMethod === 'polynomial-solver'"
-              >Polynomial Solver</span
-            >
-            <span v-else>Grad Desc - Momentum</span>
-          </div>
-
-          <!-- Select Algorithm Button (Menu) -->
+          <!-- Previous Algorithm Button (Back) -->
           <button
-            @click="openAlgorithmModal"
+            @click="previousAlgorithm"
             class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
             style="filter: brightness(1)"
             @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
             @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
             @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
             @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-            aria-label="Select Algorithm"
-            title="Select algorithm"
+            aria-label="Previous Algorithm"
+            title="Previous algorithm"
           >
-            <span class="text-lg md:text-base font-bold">☰</span>
+            <span class="text-lg md:text-base font-bold"><</span>
           </button>
+
+          <!-- Algorithm Name (Not clickable) -->
+          <div
+            class="flex-1 py-2 md:py-1 px-3 text-white text-center flex flex-col items-center justify-center"
+          >
+            <div class="text-xs md:text-xs opacity-80">{{ currentAlgoInfo.category }}</div>
+            <div class="text-sm md:text-base font-bold">{{ currentAlgoInfo.name }}</div>
+          </div>
 
           <!-- Next Algorithm Button -->
           <button
@@ -2171,7 +2176,22 @@ watch(rsCurves, (): void => {
             aria-label="Next Algorithm"
             title="Next algorithm"
           >
-            <span class="text-lg md:text-base font-bold">▶</span>
+            <span class="text-lg md:text-base font-bold">></span>
+          </button>
+
+          <!-- Select Algorithm Button (Menu) -->
+          <button
+            @click="openAlgorithmModal"
+            class="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center bg-gray-600 text-white border-none rounded-full cursor-pointer transition-all shrink-0"
+            style="filter: brightness(1)"
+            @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+            @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+            @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+            aria-label="Select Algorithm"
+            title="Select algorithm"
+          >
+            <span class="text-lg md:text-base font-bold">^</span>
           </button>
         </div>
 
