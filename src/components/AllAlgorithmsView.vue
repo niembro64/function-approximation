@@ -31,10 +31,10 @@ watch(genPerSecValue, (newVal) => {
 
 <template>
   <div class="flex flex-col">
-    <!-- Gen Per Sec Slider -->
+    <!-- Speed Slider -->
     <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2 order-1">
       <Slider
-        label="Gen Per Sec"
+        label="Speed"
         v-model="genPerSecValue"
         :min="1"
         :max="200"
@@ -80,7 +80,7 @@ watch(genPerSecValue, (newVal) => {
       @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
       @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
     >
-      {{ graphMode === 'loss' ? 'Loss Per Gen' : 'Graph All Curves' }}
+      {{ graphMode === 'loss' ? 'View Loss' : 'View Curves' }}
     </button>
   </div>
 </template>
