@@ -1157,20 +1157,13 @@ const gaussianElimination = (A: number[][], b: number[]): number[] | null => {
   return x;
 };
 
-// Solve polynomial exactly using linear algebra (Vandermonde system)
+// Solve polynomial using linear algebra (exact or least-squares fit)
 const solvePolynomialExact = (): void => {
   if (curves.value.length === 0) return;
   const curve: Curve = curves.value[0]!;
 
-  // If more points than weights, no unique solution exists
-  if (numPoints.value > numWeights.value) {
-    // Will display "no solution" message in canvas
-    return;
-  }
-
-  // Use min(numPoints, numWeights) points to solve
-  const n = Math.min(numPoints.value, numWeights.value);
-  const pointsToUse = points.value.slice(0, n);
+  const n = numWeights.value; // Number of coefficients to solve for
+  const m = numPoints.value;  // Number of data points
 
   // Build Vandermonde matrix A and vector b
   // A[i][j] = x_i^j (x to the power j)
@@ -1178,22 +1171,59 @@ const solvePolynomialExact = (): void => {
   const A: number[][] = [];
   const b: number[] = [];
 
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < m; i++) {
     const row: number[] = [];
     for (let j = 0; j < n; j++) {
-      row.push(Math.pow(pointsToUse[i].x, j));
+      row.push(Math.pow(points.value[i].x, j));
     }
     A.push(row);
-    b.push(pointsToUse[i].y);
+    b.push(points.value[i].y);
   }
 
-  // Solve Ax = b using Gaussian elimination
-  const solution = gaussianElimination(A, b);
+  let solution: number[] | null = null;
+
+  if (m >= n) {
+    // More points than weights (or equal): use least-squares via Normal Equations
+    // Solve (A^T * A) * x = A^T * b
+    const AtA: number[][] = [];
+    const Atb: number[] = [];
+
+    // Compute A^T * A (n x n matrix)
+    for (let i = 0; i < n; i++) {
+      const row: number[] = [];
+      for (let j = 0; j < n; j++) {
+        let sum = 0;
+        for (let k = 0; k < m; k++) {
+          sum += A[k][i] * A[k][j];
+        }
+        row.push(sum);
+      }
+      AtA.push(row);
+    }
+
+    // Compute A^T * b (n x 1 vector)
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let k = 0; k < m; k++) {
+        sum += A[k][i] * b[k];
+      }
+      Atb.push(sum);
+    }
+
+    solution = gaussianElimination(AtA, Atb);
+  } else {
+    // Fewer points than weights: use only as many coefficients as we have points
+    const reducedA: number[][] = [];
+    for (let i = 0; i < m; i++) {
+      reducedA.push(A[i].slice(0, m));
+    }
+    solution = gaussianElimination(reducedA, b);
+  }
 
   if (solution !== null) {
     // Set the weights from solution
     for (let i = 0; i < numWeights.value; i++) {
-      if (i < n) {
+      if (i < solution.length) {
         curve.weights[i] = solution[i];
       } else {
         // Set extra weights to zero
@@ -2073,7 +2103,7 @@ watch(rsCurves, (): void => {
 <template>
   <!-- BUILD TIMESTAMP FOR CACHE VERIFICATION -->
   <!-- <div class="fixed top-0 right-0 bg-green-600 text-white px-2 py-1 text-xs z-50">
-    BUILD: 2025-11-16 00:20 UTC - SHORT NAMES ACTIVE
+    zzz
   </div> -->
 
   <div

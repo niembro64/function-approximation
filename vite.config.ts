@@ -8,5 +8,10 @@ export default defineConfig({
   server: {
     host: true, // Expose on network
     port: 3000, // Completely different port
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
   },
 })
