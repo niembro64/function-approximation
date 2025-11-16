@@ -7,7 +7,7 @@ import {
   COORD_MIN,
   COORD_MAX,
   CURVE_HORIZONTAL_OVERDRAW,
-  CURVE_RESOLUTION,
+  PRIMARY_CURVE_RESOLUTION,
   COLOR_BACKGROUND,
   COLOR_GRID,
   COLOR_AXES,
@@ -22,7 +22,7 @@ import {
   ERROR_BAR_LINE_WIDTH,
   POINT_RADIUS,
   DOT_BORDER_WIDTH,
-} from '../constants/config';
+} from '../config';
 
 export function useCanvasRenderer(
   canvasRef: Ref<HTMLCanvasElement | null>,
@@ -187,8 +187,8 @@ export function useCanvasRenderer(
         const drawMax: number = COORD_MAX + CURVE_HORIZONTAL_OVERDRAW;
         const range: number = drawMax - drawMin;
 
-        for (let i: number = 0; i <= CURVE_RESOLUTION; i++) {
-          const x: number = drawMin + (i / CURVE_RESOLUTION) * range;
+        for (let i: number = 0; i <= PRIMARY_CURVE_RESOLUTION; i++) {
+          const x: number = drawMin + (i / PRIMARY_CURVE_RESOLUTION) * range;
           const y: number = evaluateCurve(curve, x);
           const coords: CanvasCoords = toCanvasCoords(x, y);
 
