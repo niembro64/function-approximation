@@ -1854,7 +1854,7 @@ const draw = (): void => {
 
   // Draw "No Solution" message on top of everything if needed
   if (hasNoSolution) {
-    ctx.fillStyle = TAILWIND_PINK_500;
+    ctx.fillStyle = CONFIG.colors.tailwind.pink500;
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1899,7 +1899,11 @@ onUnmounted((): void => {
 // Update loss when numPoints changes (points auto-updates via computed)
 watch(numPoints, (): void => {
   if (allPoints.value.length > 0) {
-    updateLoss();
+    if (solutionMethod.value === 'polynomial-solver') {
+      solvePolynomialExact();
+    } else {
+      updateLoss();
+    }
   }
 });
 
@@ -1910,6 +1914,9 @@ watch(numWeights, (): void => {
       generateCurves();
     } else if (solutionMethod.value === 'random-search') {
       resetRandomSearch();
+    } else if (solutionMethod.value === 'polynomial-solver') {
+      generateSingleCurve();
+      solvePolynomialExact();
     } else {
       generateSingleCurve();
     }
