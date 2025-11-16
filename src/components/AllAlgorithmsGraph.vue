@@ -116,8 +116,26 @@ const draw = (): void => {
   ctx.fillText('Loss (log scale)', 0, 0);
   ctx.restore();
 
-  // Draw lines for each algorithm
-  props.lossHistory.forEach((losses, algorithm) => {
+  // Draw lines for each algorithm - sorted worst to best (so best is on top)
+  // Get algorithms with their current losses and sort
+  const algorithmsWithLoss: Array<{ algorithm: SolutionMethod; loss: number }> = [];
+  CONFIG.algorithmOrder.forEach((algorithm: SolutionMethod) => {
+    // Skip polynomial solver
+    if (algorithm === 'polynomial-solver') return;
+
+    const losses = props.lossHistory.get(algorithm);
+    const currentLoss = losses && losses.length > 0 ? losses[losses.length - 1] : Infinity;
+    algorithmsWithLoss.push({ algorithm, loss: currentLoss });
+  });
+
+  // Sort by loss descending (worst first, best last)
+  algorithmsWithLoss.sort((a, b) => b.loss - a.loss);
+
+  // Draw in sorted order
+  algorithmsWithLoss.forEach(({ algorithm }) => {
+    const losses = props.lossHistory.get(algorithm);
+    if (!losses) return;
+
     const color = CONFIG.utils.getAlgoColor(algorithm);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -148,22 +166,8 @@ const draw = (): void => {
   let legendY = PADDING;
   const legendX = CANVAS_WIDTH - PADDING - 220;
 
-  // Get algorithms with their current losses and sort
-  const algorithmsWithLoss: Array<{ algorithm: SolutionMethod; loss: number }> = [];
-  CONFIG.algorithmOrder.forEach((algorithm) => {
-    // Skip polynomial solver
-    if (algorithm === 'polynomial-solver') return;
-
-    const losses = props.lossHistory.get(algorithm);
-    const currentLoss = losses && losses.length > 0 ? losses[losses.length - 1] : Infinity;
-    algorithmsWithLoss.push({ algorithm, loss: currentLoss });
-  });
-
-  // Sort by loss (ascending - best at top)
-  algorithmsWithLoss.sort((a, b) => a.loss - b.loss);
-
-  // Draw sorted legend
-  algorithmsWithLoss.forEach(({ algorithm, loss }) => {
+  // Draw sorted legend (reverse order so best is at top)
+  [...algorithmsWithLoss].reverse().forEach(({ algorithm, loss }) => {
     const color = CONFIG.utils.getAlgoColor(algorithm);
     const info = CONFIG.utils.getAlgoInfo(algorithm);
 
