@@ -25,8 +25,9 @@ interface Props {
 const props = defineProps<Props>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 500;
+const CANVAS_SIZE = 800;
+const CANVAS_WIDTH = CANVAS_SIZE;
+const CANVAS_HEIGHT = CANVAS_SIZE;
 const PADDING = 25;
 
 // Evaluate polynomial curve

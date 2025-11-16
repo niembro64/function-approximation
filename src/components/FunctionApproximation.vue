@@ -2255,12 +2255,12 @@ watch(rsCurves, (): void => {
   </div> -->
 
   <div
-    class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch overflow-hidden p-0 md:p-0"
+    class="h-screen flex flex-col md:flex-row gap-0 items-stretch overflow-hidden p-0"
   >
     <!-- Single Algorithm Mode -->
     <template v-if="viewMode === 'single'">
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 md:shrink-0 shrink-0 min-h-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 bg-ui-bg border-0 border-ui-border overflow-hidden order-2 md:order-1 shrink-0 min-h-0 md:h-screen"
       >
         <!-- Weights Table -->
         <div class="order-1 flex-1 flex flex-col justify-start overflow-hidden min-h-0">
@@ -2300,11 +2300,12 @@ watch(rsCurves, (): void => {
       </div>
 
       <!-- Canvas Display -->
-      <canvas
-        ref="canvasRef"
-        :width="CANVAS_SIZE * CONFIG.canvas.scale"
-        :height="CANVAS_SIZE * CONFIG.canvas.scale"
-        class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg touch-none order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-none md:h-full md:flex-1"
+      <div class="order-1 md:order-2 flex-1 flex items-start justify-center overflow-hidden bg-canvas-bg min-h-0 md:h-screen pt-2 md:pt-0">
+        <canvas
+          ref="canvasRef"
+          :width="CANVAS_SIZE * CONFIG.canvas.scale"
+          :height="CANVAS_SIZE * CONFIG.canvas.scale"
+          class="touch-none w-full max-w-full object-contain md:w-auto md:h-auto"
         :style="{
           cursor:
             hoveredPointIndex !== null || draggingPointIndex !== null
@@ -2316,17 +2317,18 @@ watch(rsCurves, (): void => {
         @mouseup="handleMouseUp"
         @mouseleave="handleMouseLeave"
         @touchstart="handleTouchStart"
-        @touchmove="handleTouchMove"
-        @touchend="handleTouchEnd"
-        @touchcancel="handleTouchEnd"
-      />
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+          @touchcancel="handleTouchEnd"
+        />
+      </div>
     </template>
 
     <!-- All Algorithms Mode -->
     <template v-else>
       <!-- Controls Sidebar -->
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-hidden order-2 md:order-1 md:shrink-0 shrink-0 min-h-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 bg-ui-bg border-0 border-ui-border overflow-hidden order-2 md:order-1 shrink-0 min-h-0 md:h-screen"
       >
         <!-- All Algorithms Controls (Sliders & Buttons) -->
         <div class="order-1 shrink-0">
@@ -2360,17 +2362,17 @@ watch(rsCurves, (): void => {
       </div>
 
       <!-- Graph Display -->
-      <AllAlgorithmsGraph
-        v-if="allAlgoGraphMode === 'loss'"
-        :lossHistory="allAlgoLossHistory"
-        class="flex-1 min-h-0 min-w-0 order-1 md:order-2"
-      />
-      <AllAlgorithmsCurvesGraph
-        v-else
-        :allAlgoStates="allAlgoStates"
-        :points="points"
-        class="flex-1 min-h-0 min-w-0 order-1 md:order-2"
-      />
+      <div class="flex-1 min-h-0 min-w-0 order-1 md:order-2 flex items-start justify-center overflow-hidden md:h-screen pt-2 md:pt-0">
+        <AllAlgorithmsGraph
+          v-if="allAlgoGraphMode === 'loss'"
+          :lossHistory="allAlgoLossHistory"
+        />
+        <AllAlgorithmsCurvesGraph
+          v-else
+          :allAlgoStates="allAlgoStates"
+          :points="points"
+        />
+      </div>
     </template>
 
     <!-- Info Modal -->
