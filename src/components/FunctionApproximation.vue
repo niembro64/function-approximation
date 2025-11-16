@@ -2072,9 +2072,9 @@ watch(rsCurves, (): void => {
 
 <template>
   <!-- BUILD TIMESTAMP FOR CACHE VERIFICATION -->
-  <div class="fixed top-0 right-0 bg-red-600 text-white px-2 py-1 text-xs z-50">
-    BUILD: 2025-11-16 00:05 UTC - BACK BUTTON ADDED
-  </div>
+  <!-- <div class="fixed top-0 right-0 bg-green-600 text-white px-2 py-1 text-xs z-50">
+    BUILD: 2025-11-16 00:20 UTC - SHORT NAMES ACTIVE
+  </div> -->
 
   <div
     class="h-screen-mobile flex flex-col md:flex-row gap-0 md:gap-4 justify-center items-stretch flex-1 overflow-hidden p-0 md:p-0"

@@ -55,6 +55,7 @@ export type SolutionMethod =
 export interface AlgorithmInfo {
   id: SolutionMethod;
   name: string;
+  fullName: string;
   category: string;
   color: string;
 }

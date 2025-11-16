@@ -300,14 +300,14 @@ export const ALGORITHM_ORDER: SolutionMethod[] = [
 // ============================================================
 
 export const ALGORITHMS: AlgorithmInfo[] = [
-  { id: 'gradient', name: 'Stochastic', category: 'Gradient Descent', color: ALGO_GRADIENT_DESCENT },
-  { id: 'momentum', name: 'Momentum', category: 'Gradient Descent', color: ALGO_MOMENTUM_BASED_GD },
-  { id: 'adam', name: 'Adam', category: 'Gradient Descent', color: ALGO_ADAM_OPTIMIZER },
-  { id: 'genetic', name: 'Genetic Algorithm', category: 'Evolutionary', color: ALGO_GENETIC_ALGORITHM },
-  { id: 'particle-swarm', name: 'Particle Swarm', category: 'Swarm Intelligence', color: ALGO_PARTICLE_SWARM },
-  { id: 'random-search', name: 'Random Search', category: 'Baseline', color: ALGO_RANDOM_SEARCH },
-  { id: 'simulated-annealing', name: 'Simulated Annealing', category: 'Metaheuristic', color: ALGO_SIMULATED_ANNEALING },
-  { id: 'polynomial-solver', name: 'Polynomial Solver', category: 'Baseline', color: ALGO_POLYNOMIAL_SOLVER },
+  { id: 'gradient', name: 'Stochastic', fullName: 'Stochastic Gradient Descent', category: 'Gradient Descent', color: ALGO_GRADIENT_DESCENT },
+  { id: 'momentum', name: 'Momentum', fullName: 'Momentum-Based Gradient Descent', category: 'Gradient Descent', color: ALGO_MOMENTUM_BASED_GD },
+  { id: 'adam', name: 'Adam', fullName: 'Adam Optimizer', category: 'Gradient Descent', color: ALGO_ADAM_OPTIMIZER },
+  { id: 'genetic', name: 'Genetic', fullName: 'Genetic Algorithm', category: 'Evolutionary', color: ALGO_GENETIC_ALGORITHM },
+  { id: 'particle-swarm', name: 'Particle', fullName: 'Particle Swarm Optimization', category: 'Swarm Intelligence', color: ALGO_PARTICLE_SWARM },
+  { id: 'random-search', name: 'Random', fullName: 'Random Search', category: 'Baseline', color: ALGO_RANDOM_SEARCH },
+  { id: 'simulated-annealing', name: 'Annealing', fullName: 'Simulated Annealing', category: 'Metaheuristic', color: ALGO_SIMULATED_ANNEALING },
+  { id: 'polynomial-solver', name: 'Solve', fullName: 'Exact Polynomial Solver', category: 'Baseline', color: ALGO_POLYNOMIAL_SOLVER },
 ];
 
 // ============================================================

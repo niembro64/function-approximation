@@ -72,7 +72,7 @@ const selectAlgorithm = (algorithm: string): void => {
                   :style="{ backgroundColor: algo.color }"
                 ></div>
                 <div class="flex flex-col">
-                  <span class="text-white font-medium">{{ algo.name }}</span>
+                  <span class="text-white font-medium">{{ algo.fullName }}</span>
                   <span class="text-ui-text text-sm">{{ algo.category }}</span>
                 </div>
               </div>
