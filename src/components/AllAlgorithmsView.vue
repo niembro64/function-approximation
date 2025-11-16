@@ -30,34 +30,22 @@ watch(genPerSecValue, (newVal) => {
 </script>
 
 <template>
-  <!-- Graph Mode Toggle -->
-  <button
-    @click="emit('update:graphMode', graphMode === 'loss' ? 'curves' : 'loss')"
-    class="mb-2 md:mb-3 py-3 md:py-2 px-4 text-sm md:text-base font-bold text-white bg-gray-700 border-none rounded cursor-pointer transition-all"
-    style="filter: brightness(1)"
-    @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-    @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-    @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-    @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-  >
-    {{ graphMode === 'loss' ? 'Loss Per Gen' : 'Graph All Curves' }}
-  </button>
+  <div class="flex flex-col">
+    <!-- Gen Per Sec Slider -->
+    <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2 order-1">
+      <Slider
+        label="Gen Per Sec"
+        v-model="genPerSecValue"
+        :min="1"
+        :max="200"
+        :step="1"
+        :decimals="0"
+        thumbColor="#666666"
+      />
+    </div>
 
-  <!-- Gen Per Sec Slider -->
-  <div class="mb-2 md:mb-3 flex flex-col gap-1.5 md:gap-2">
-    <Slider
-      label="Gen Per Sec"
-      v-model="genPerSecValue"
-      :min="1"
-      :max="60"
-      :step="1"
-      :decimals="0"
-      thumbColor="#666666"
-    />
-  </div>
-
-  <!-- Reset and New Points buttons -->
-  <div class="flex items-stretch gap-2 mb-2 md:mb-3">
+    <!-- Reset and New Points buttons -->
+    <div class="flex items-stretch gap-2 mb-2 md:mb-3 order-2">
     <button
       @click="emit('reset')"
       class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
@@ -79,6 +67,20 @@ watch(genPerSecValue, (newVal) => {
       @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
     >
       New Points
+    </button>
+  </div>
+
+    <!-- Graph Mode Toggle -->
+    <button
+      @click="emit('update:graphMode', graphMode === 'loss' ? 'curves' : 'loss')"
+      class="mb-2 md:mb-3 py-3 md:py-2 px-4 text-sm md:text-base font-bold text-white bg-gray-700 border-none rounded cursor-pointer transition-all order-3"
+      style="filter: brightness(1)"
+      @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+      @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+      @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+      @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+    >
+      {{ graphMode === 'loss' ? 'Loss Per Gen' : 'Graph All Curves' }}
     </button>
   </div>
 </template>

@@ -33,7 +33,7 @@ const viewMode = ref<'single' | 'all'>('single');
 
 // All Algorithms mode state
 const allAlgoLossHistory = ref<Map<SolutionMethod, number[]>>(new Map());
-const allAlgoGenerationsPerSec = ref<number>(10);
+const allAlgoGenerationsPerSec = ref<number>(60);
 const allAlgoIsRunning = ref<boolean>(false);
 const allAlgoAnimationFrameId = ref<number | null>(null);
 const allAlgoLastFrameTime = ref<number>(0);
@@ -304,7 +304,7 @@ const saSpecificSliders: SliderConfig[] = [
     min: CONFIG.sliders.simulatedAnnealing.coolingRate.min,
     max: CONFIG.sliders.simulatedAnnealing.coolingRate.max,
     step: 0.0001,
-    decimals: 4,
+    decimals: 2,
     useScientificNotation: true,
   },
   {
@@ -2260,37 +2260,43 @@ watch(rsCurves, (): void => {
     <!-- Single Algorithm Mode -->
     <template v-if="viewMode === 'single'">
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
       >
+        <!-- Weights Table -->
+        <div class="order-1 flex-1 flex flex-col justify-start overflow-y-auto">
+          <WeightsTable
+            :sortedCurves="sortedCurves"
+            :numWeights="numWeights"
+            :solutionMethod="solutionMethod"
+            :formatScientific="generateScientificNotation"
+          />
+        </div>
+
         <!-- Control Panel (Sliders) -->
-        <ControlPanel
-          :sliderConfigs="sliderConfigs"
-          :thumbColor="currentAlgoColor"
-        />
+        <div class="order-2">
+          <ControlPanel
+            :sliderConfigs="sliderConfigs"
+            :thumbColor="currentAlgoColor"
+          />
+        </div>
 
         <!-- Algorithm Controls (Buttons) -->
-        <AlgorithmControls
-          :currentAlgoInfo="currentAlgoInfo"
-          :currentAlgoColor="currentAlgoColor"
-          :pointsColor="CONFIG.colors.points.darkGray"
-          :mode="viewMode"
-          @info="openInfoModal"
-          @previous="previousAlgorithm"
-          @next="nextAlgorithm"
-          @selectAlgorithm="openAlgorithmModal"
-          @reset="resetCurrentAlgorithm"
-          @resetParams="resetParameters"
-          @newPoints="generateRandomPoints"
-          @toggleMode="toggleViewMode"
-        />
-
-        <!-- Weights Table -->
-        <WeightsTable
-          :sortedCurves="sortedCurves"
-          :numWeights="numWeights"
-          :solutionMethod="solutionMethod"
-          :formatScientific="generateScientificNotation"
-        />
+        <div class="order-3">
+          <AlgorithmControls
+            :currentAlgoInfo="currentAlgoInfo"
+            :currentAlgoColor="currentAlgoColor"
+            :pointsColor="CONFIG.colors.points.darkGray"
+            :mode="viewMode"
+            @info="openInfoModal"
+            @previous="previousAlgorithm"
+            @next="nextAlgorithm"
+            @selectAlgorithm="openAlgorithmModal"
+            @reset="resetCurrentAlgorithm"
+            @resetParams="resetParameters"
+            @newPoints="generateRandomPoints"
+            @toggleMode="toggleViewMode"
+          />
+        </div>
       </div>
 
       <!-- Canvas Display -->
@@ -2320,33 +2326,37 @@ watch(rsCurves, (): void => {
     <template v-else>
       <!-- Controls Sidebar -->
       <div
-        class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col justify-end text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
       >
-        <!-- Algorithm Controls (Buttons) - Mode toggle only -->
-        <AlgorithmControls
-          :currentAlgoInfo="currentAlgoInfo"
-          :currentAlgoColor="currentAlgoColor"
-          :pointsColor="CONFIG.colors.points.darkGray"
-          :mode="viewMode"
-          @info="openInfoModal"
-          @previous="previousAlgorithm"
-          @next="nextAlgorithm"
-          @selectAlgorithm="openAlgorithmModal"
-          @reset="resetCurrentAlgorithm"
-          @resetParams="resetParameters"
-          @newPoints="generateRandomPoints"
-          @toggleMode="toggleViewMode"
-        />
-
         <!-- All Algorithms Controls (Sliders & Buttons) -->
-        <AllAlgorithmsView
-          :generationsPerSec="allAlgoGenerationsPerSec"
-          :graphMode="allAlgoGraphMode"
-          @reset="resetAllAlgorithms"
-          @newPoints="generateRandomPoints"
-          @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
-          @update:graphMode="allAlgoGraphMode = $event"
-        />
+        <div class="order-1">
+          <AllAlgorithmsView
+            :generationsPerSec="allAlgoGenerationsPerSec"
+            :graphMode="allAlgoGraphMode"
+            @reset="resetAllAlgorithms"
+            @newPoints="generateRandomPoints"
+            @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
+            @update:graphMode="allAlgoGraphMode = $event"
+          />
+        </div>
+
+        <!-- Algorithm Controls (Buttons) - Mode toggle only -->
+        <div class="order-2">
+          <AlgorithmControls
+            :currentAlgoInfo="currentAlgoInfo"
+            :currentAlgoColor="currentAlgoColor"
+            :pointsColor="CONFIG.colors.points.darkGray"
+            :mode="viewMode"
+            @info="openInfoModal"
+            @previous="previousAlgorithm"
+            @next="nextAlgorithm"
+            @selectAlgorithm="openAlgorithmModal"
+            @reset="resetCurrentAlgorithm"
+            @resetParams="resetParameters"
+            @newPoints="generateRandomPoints"
+            @toggleMode="toggleViewMode"
+          />
+        </div>
       </div>
 
       <!-- Graph Display -->
