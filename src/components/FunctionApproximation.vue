@@ -6,6 +6,7 @@ import AlgorithmControls from './AlgorithmControls.vue';
 import InfoModal from './InfoModal.vue';
 import AlgorithmSelectModal from './AlgorithmSelectModal.vue';
 import AllAlgorithmsView from './AllAlgorithmsView.vue';
+import AllAlgorithmsGraph from './AllAlgorithmsGraph.vue';
 import { generateScientificNotation } from '../utils/formatters';
 import type {
   Point,
@@ -2315,8 +2316,9 @@ watch(rsCurves, (): void => {
 
     <!-- All Algorithms Mode -->
     <template v-else>
+      <!-- Controls Sidebar -->
       <div
-        class="w-full flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto order-2 md:order-1"
+        class="w-full md:w-[600px] md:min-w-0 flex flex-col text-left p-2 md:p-3 bg-ui-bg md:rounded-lg border-0 md:border-2 border-ui-border overflow-y-auto md:overflow-y-auto order-2 md:order-1 md:shrink shrink-0"
       >
         <!-- Algorithm Controls (Buttons) - Mode toggle only -->
         <AlgorithmControls
@@ -2334,9 +2336,8 @@ watch(rsCurves, (): void => {
           @toggleMode="toggleViewMode"
         />
 
-        <!-- All Algorithms Comparison View -->
+        <!-- All Algorithms Controls (Sliders & Buttons) -->
         <AllAlgorithmsView
-          :lossHistory="allAlgoLossHistory"
           :generationsPerSec="allAlgoGenerationsPerSec"
           :isRunning="allAlgoIsRunning"
           @reset="resetAllAlgorithms"
@@ -2345,6 +2346,11 @@ watch(rsCurves, (): void => {
           @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
         />
       </div>
+
+      <!-- Graph Display -->
+      <AllAlgorithmsGraph
+        :lossHistory="allAlgoLossHistory"
+      />
     </template>
 
     <!-- Info Modal -->

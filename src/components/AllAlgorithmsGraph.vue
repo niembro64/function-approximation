@@ -1,0 +1,198 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import type { SolutionMethod } from '../types';
+import { CONFIG } from '../config';
+
+interface Props {
+  lossHistory: Map<SolutionMethod, number[]>;
+}
+
+const props = defineProps<Props>();
+
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 500;
+const PADDING = 60;
+
+// Draw the loss comparison graph
+const draw = (): void => {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Clear canvas
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  const graphWidth = CANVAS_WIDTH - 2 * PADDING;
+  const graphHeight = CANVAS_HEIGHT - 2 * PADDING;
+
+  // Find max generation across all algorithms
+  let maxGen = 0;
+  props.lossHistory.forEach((losses) => {
+    maxGen = Math.max(maxGen, losses.length);
+  });
+
+  if (maxGen === 0) return;
+
+  // Find min and max loss values for log scale
+  let minLoss = Infinity;
+  let maxLoss = -Infinity;
+  props.lossHistory.forEach((losses) => {
+    losses.forEach((loss) => {
+      if (loss > 0) {
+        minLoss = Math.min(minLoss, loss);
+        maxLoss = Math.max(maxLoss, loss);
+      }
+    });
+  });
+
+  if (!isFinite(minLoss) || !isFinite(maxLoss)) return;
+
+  // Use log10 scale for y-axis
+  const logMin = Math.log10(minLoss);
+  const logMax = Math.log10(maxLoss);
+  const logRange = logMax - logMin;
+
+  // Draw axes
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  // Y-axis
+  ctx.moveTo(PADDING, PADDING);
+  ctx.lineTo(PADDING, CANVAS_HEIGHT - PADDING);
+  // X-axis
+  ctx.lineTo(CANVAS_WIDTH - PADDING, CANVAS_HEIGHT - PADDING);
+  ctx.stroke();
+
+  // Draw grid lines and labels
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#aaa';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'right';
+
+  // Y-axis grid (log10 scale)
+  const numYTicks = 5;
+  for (let i = 0; i <= numYTicks; i++) {
+    const logValue = logMin + (i / numYTicks) * logRange;
+    const value = Math.pow(10, logValue);
+    const y = CANVAS_HEIGHT - PADDING - (i / numYTicks) * graphHeight;
+
+    ctx.beginPath();
+    ctx.moveTo(PADDING, y);
+    ctx.lineTo(CANVAS_WIDTH - PADDING, y);
+    ctx.stroke();
+
+    ctx.fillText(value.toExponential(1), PADDING - 5, y + 4);
+  }
+
+  // X-axis grid
+  ctx.textAlign = 'center';
+  const numXTicks = 5;
+  for (let i = 0; i <= numXTicks; i++) {
+    const gen = Math.floor((i / numXTicks) * maxGen);
+    const x = PADDING + (i / numXTicks) * graphWidth;
+
+    ctx.beginPath();
+    ctx.moveTo(x, PADDING);
+    ctx.lineTo(x, CANVAS_HEIGHT - PADDING);
+    ctx.stroke();
+
+    ctx.fillText(gen.toString(), x, CANVAS_HEIGHT - PADDING + 20);
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#aaa';
+  ctx.font = '14px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Generation', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 10);
+
+  ctx.save();
+  ctx.translate(15, CANVAS_HEIGHT / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Loss (log scale)', 0, 0);
+  ctx.restore();
+
+  // Draw lines for each algorithm
+  props.lossHistory.forEach((losses, algorithm) => {
+    const color = CONFIG.utils.getAlgoColor(algorithm);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    let started = false;
+    losses.forEach((loss, gen) => {
+      if (loss > 0) {
+        const logLoss = Math.log10(loss);
+        const x = PADDING + (gen / maxGen) * graphWidth;
+        const y = CANVAS_HEIGHT - PADDING - ((logLoss - logMin) / logRange) * graphHeight;
+
+        if (!started) {
+          ctx.moveTo(x, y);
+          started = true;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+    });
+
+    ctx.stroke();
+  });
+
+  // Draw legend
+  ctx.textAlign = 'left';
+  ctx.font = '12px monospace';
+  let legendY = PADDING;
+  const legendX = CANVAS_WIDTH - PADDING - 150;
+
+  CONFIG.algorithmOrder.forEach((algorithm) => {
+    // Skip polynomial solver
+    if (algorithm === 'polynomial-solver') return;
+
+    const color = CONFIG.utils.getAlgoColor(algorithm);
+    const info = CONFIG.utils.getAlgoInfo(algorithm);
+
+    ctx.fillStyle = color;
+    ctx.fillRect(legendX, legendY - 8, 15, 15);
+
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(info.name, legendX + 20, legendY + 4);
+
+    legendY += 20;
+  });
+};
+
+onMounted(() => {
+  draw();
+});
+
+// Watch for changes that require redraw
+const maxGen = computed(() => {
+  let max = 0;
+  props.lossHistory.forEach((losses) => {
+    max = Math.max(max, losses.length);
+  });
+  return max;
+});
+
+// Redraw when loss history changes
+watch(() => props.lossHistory, () => {
+  draw();
+}, { deep: true });
+
+watch(maxGen, () => {
+  draw();
+});
+</script>
+
+<template>
+  <canvas
+    ref="canvasRef"
+    :width="CANVAS_WIDTH"
+    :height="CANVAS_HEIGHT"
+    class="border-0 md:border-2 border-ui-border md:rounded-lg bg-canvas-bg order-1 md:order-2 w-full min-h-0 flex-1 max-w-full object-contain object-top md:max-w-[66vw] md:h-full md:flex-initial"
+  />
+</template>
