@@ -288,10 +288,10 @@ export const ALGORITHM_ORDER: SolutionMethod[] = [
   'gradient',
   'momentum',
   'adam',
-  'random-search',
   'genetic',
   'particle-swarm',
   'simulated-annealing',
+  'random-search',
   'polynomial-solver',
 ];
 
