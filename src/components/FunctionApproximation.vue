@@ -752,12 +752,41 @@ const generateRandomPoints = (): void => {
     })
   );
 
-  // Polynomial solver needs fresh solve since it's exact, not iterative
-  if (solutionMethod.value === 'polynomial-solver') {
-    resetPolynomialSolver();
+  // If in All Algorithms mode, recalculate all algorithm states
+  if (viewMode.value === 'all') {
+    recalculateAllAlgorithmStates();
   } else {
-    // For all other algorithms, preserve the "brain" and just recalculate losses
+    // Single Algorithm mode
+    // Polynomial solver needs fresh solve since it's exact, not iterative
+    if (solutionMethod.value === 'polynomial-solver') {
+      resetPolynomialSolver();
+    } else {
+      // For all other algorithms, preserve the "brain" and just recalculate losses
+      recalculateAllCachedLosses();
+    }
+  }
+};
+
+// Recalculate losses for all algorithm states when points change in All Algorithms mode
+const recalculateAllAlgorithmStates = (): void => {
+  const originalAlgo = solutionMethod.value;
+
+  allAlgoStates.value.forEach((state, algorithm) => {
+    solutionMethod.value = algorithm;
+    restoreState(state);
+
+    // Recalculate losses for this algorithm
     recalculateAllCachedLosses();
+
+    // Save updated state
+    allAlgoStates.value.set(algorithm, saveCurrentState());
+  });
+
+  // Restore original algorithm
+  solutionMethod.value = originalAlgo;
+  const originalState = allAlgoStates.value.get(originalAlgo);
+  if (originalState) {
+    restoreState(originalState);
   }
 };
 
@@ -2312,6 +2341,7 @@ watch(rsCurves, (): void => {
           :isRunning="allAlgoIsRunning"
           @reset="resetAllAlgorithms"
           @toggle-play="toggleAllAlgorithmsPlay"
+          @newPoints="generateRandomPoints"
           @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
         />
       </div>
