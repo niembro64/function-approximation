@@ -2341,10 +2341,8 @@ watch(rsCurves, (): void => {
         <!-- All Algorithms Controls (Sliders & Buttons) -->
         <AllAlgorithmsView
           :generationsPerSec="allAlgoGenerationsPerSec"
-          :isRunning="allAlgoIsRunning"
           :graphMode="allAlgoGraphMode"
           @reset="resetAllAlgorithms"
-          @toggle-play="toggleAllAlgorithmsPlay"
           @newPoints="generateRandomPoints"
           @update:generationsPerSec="allAlgoGenerationsPerSec = $event"
           @update:graphMode="allAlgoGraphMode = $event"

@@ -4,7 +4,6 @@ import Slider from './Slider.vue';
 
 interface Props {
   generationsPerSec: number;
-  isRunning: boolean;
   graphMode: 'loss' | 'curves';
 }
 
@@ -12,7 +11,6 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   'reset': [];
-  'toggle-play': [];
   'newPoints': [];
   'update:generationsPerSec': [value: number];
   'update:graphMode': [value: 'loss' | 'curves'];
@@ -58,19 +56,8 @@ watch(genPerSecValue, (newVal) => {
     />
   </div>
 
-  <!-- Play/Pause, Reset, and New Points buttons -->
+  <!-- Reset and New Points buttons -->
   <div class="flex items-stretch gap-2 mb-2 md:mb-3">
-    <button
-      @click="emit('toggle-play')"
-      class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-      :style="{ backgroundColor: isRunning ? '#dc2626' : '#16a34a' }"
-      @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-      @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-      @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-      @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-    >
-      {{ isRunning ? 'Pause' : 'Play' }}
-    </button>
     <button
       @click="emit('reset')"
       class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
