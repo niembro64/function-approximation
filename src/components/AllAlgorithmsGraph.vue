@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import type { SolutionMethod } from '../types';
 import { CONFIG } from '../config';
+import { generateScientificNotation } from '../utils/formatters';
 
 interface Props {
   lossHistory: Map<SolutionMethod, number[]>;
@@ -163,7 +164,7 @@ const draw = (): void => {
 
   // Draw legend - sorted by current loss (best at top)
   ctx.textAlign = 'left';
-  ctx.font = '12px monospace';
+  ctx.font = '16px monospace';
   let legendY = PADDING;
   const legendX = CANVAS_WIDTH - PADDING - 220;
 
@@ -173,16 +174,16 @@ const draw = (): void => {
     const info = CONFIG.utils.getAlgoInfo(algorithm);
 
     // Format loss in exponential notation with 4 decimal places
-    const lossText = loss === Infinity ? 'N/A' : loss.toExponential(4);
+    const lossText = loss === Infinity ? 'N/A' : generateScientificNotation(loss, 4);
 
     ctx.fillStyle = '#aaa';
     ctx.fillText(lossText, legendX, legendY + 4);
 
     ctx.fillStyle = color;
-    ctx.fillRect(legendX + 85, legendY - 8, 15, 15);
+    ctx.fillRect(legendX + 110, legendY - 8, 15, 15);
 
     ctx.fillStyle = '#aaa';
-    ctx.fillText(info.name, legendX + 105, legendY + 4);
+    ctx.fillText(info.name, legendX + 130, legendY + 4);
 
     legendY += 20;
   });
