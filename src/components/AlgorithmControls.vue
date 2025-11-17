@@ -115,17 +115,6 @@ const emit = defineEmits<{
     <!-- Second Row: Reset/New Buttons -->
     <div class="flex items-stretch gap-2 order-1" v-if="mode === 'single'">
       <button
-        @click="emit('reset')"
-        class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
-        :style="{ backgroundColor: currentAlgoColor }"
-        @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-        @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
-        @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
-        @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
-      >
-        Reset Algo
-      </button>
-      <button
         @click="emit('resetParams')"
         class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
         :style="{ backgroundColor: currentAlgoColor }"
@@ -135,6 +124,17 @@ const emit = defineEmits<{
         @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
       >
         Reset Params
+      </button>
+      <button
+        @click="emit('reset')"
+        class="flex-1 py-3 md:py-2 px-2 text-xs md:text-sm font-bold text-white border-none rounded cursor-pointer transition-all flex items-center justify-center"
+        :style="{ backgroundColor: currentAlgoColor }"
+        @mouseover="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+        @mouseout="($event.currentTarget as HTMLElement).style.filter = 'brightness(1)'"
+        @mousedown="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.8)'"
+        @mouseup="($event.currentTarget as HTMLElement).style.filter = 'brightness(0.9)'"
+      >
+        Reset Algo
       </button>
       <button
         @click="emit('newPoints')"
