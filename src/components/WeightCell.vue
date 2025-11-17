@@ -15,50 +15,30 @@ const formatWithSign = (value: number, decimals: number = 2): string => {
   return value >= 0 ? `+${formatted}` : formatted;
 };
 
-// Convert weight value to color (white=0, halfway at 1, full at infinity)
+// Convert weight value to color (black=0, progressively red for positive, blue for negative)
 const getWeightColor = (weight: number): string => {
   const absWeight: number = Math.abs(weight);
   const intensity: number = absWeight / (absWeight + 1);
 
   if (weight < 0) {
-    // Negative - interpolate from white to TAILWIND_RED_500 (#fb2c36 = rgb(251, 44, 54))
-    const r: number = Math.floor(255 + (251 - 255) * intensity);
-    const g: number = Math.floor(255 + (44 - 255) * intensity);
-    const b: number = Math.floor(255 + (54 - 255) * intensity);
+    // Negative - interpolate from black to blue (#3b82f6 = rgb(59, 130, 246))
+    const r: number = Math.floor(0 + (59 - 0) * intensity);
+    const g: number = Math.floor(0 + (130 - 0) * intensity);
+    const b: number = Math.floor(0 + (246 - 0) * intensity);
     return `rgb(${r}, ${g}, ${b})`;
   } else {
-    // Positive - interpolate from white to TAILWIND_BLUE_500 (#2b7fff = rgb(43, 127, 255))
-    const r: number = Math.floor(255 + (43 - 255) * intensity);
-    const g: number = Math.floor(255 + (127 - 255) * intensity);
-    const b: number = Math.floor(255 + (255 - 255) * intensity);
+    // Positive - interpolate from black to red (#ef4444 = rgb(239, 68, 68))
+    const r: number = Math.floor(0 + (239 - 0) * intensity);
+    const g: number = Math.floor(0 + (68 - 0) * intensity);
+    const b: number = Math.floor(0 + (68 - 0) * intensity);
     return `rgb(${r}, ${g}, ${b})`;
   }
 };
 
-// Get text color (black or white) based on background brightness
+// Get text color (always white since background goes from black to colored)
 const getTextColor = (weight: number): string => {
-  const absWeight: number = Math.abs(weight);
-  const intensity: number = absWeight / (absWeight + 1);
-
-  let r: number, g: number, b: number;
-
-  if (weight < 0) {
-    // Red background
-    r = Math.floor(255 + (251 - 255) * intensity);
-    g = Math.floor(255 + (44 - 255) * intensity);
-    b = Math.floor(255 + (54 - 255) * intensity);
-  } else {
-    // Blue background
-    r = Math.floor(255 + (43 - 255) * intensity);
-    g = Math.floor(255 + (127 - 255) * intensity);
-    b = Math.floor(255 + (255 - 255) * intensity);
-  }
-
-  // Calculate relative luminance using sRGB formula
-  const luminance: number = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // Use black text for light backgrounds, white text for dark backgrounds
-  return luminance > 0.5 ? '#000000' : '#ffffff';
+  // Always use white text since background starts at black and gets darker colors
+  return '#ffffff';
 };
 </script>
 
